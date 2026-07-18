@@ -7,6 +7,35 @@ The implementation follows the book's progression from parsing C source through 
 ## Requirements
 
 - .NET 11 SDK
+- GCC available on `PATH`
+
+## Usage
+
+Build the compiler from the repository root:
+
+```sh
+dotnet build
+```
+
+Compile a C source file by passing its path as the only argument:
+
+```sh
+dotnet run -- data/return_2.c
+```
+
+The compiler preprocesses the source with GCC, generates assembly, and links
+the result into an executable beside the input file. The example above creates
+`data/return_2`. Intermediate `.i` and `.s` files are removed after each
+successful stage.
+
+You can run the generated executable with:
+
+```sh
+./data/return_2
+echo $?
+```
+
+The example exits with status `2`.
 
 ## Status
 

@@ -39,4 +39,6 @@ The example exits with status `2`.
 
 ## Status
 
-This project is under development. Additional compiler stages and language features will be added as the implementation progresses through the book.
+> [!WARNING]
+> This project is under development. Additional compiler stages and language
+> features will be added as the implementation progresses through the book.

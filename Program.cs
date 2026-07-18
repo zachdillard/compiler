@@ -14,14 +14,16 @@ var startInfo = new ProcessStartInfo
   FileName = "gcc",
   UseShellExecute = false,
   RedirectStandardError = true,
-  CreateNoWindow = true
+  CreateNoWindow = true,
+  ArgumentList =
+  {
+    "-E",
+    "-P",
+    inputFile,
+    "-o",
+    preprocessedFile
+  }
 };
-
-startInfo.ArgumentList.Add("-E");
-startInfo.ArgumentList.Add("-P");
-startInfo.ArgumentList.Add(inputFile);
-startInfo.ArgumentList.Add("-o");
-startInfo.ArgumentList.Add(preprocessedFile);
 
 try
 {

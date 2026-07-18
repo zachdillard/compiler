@@ -9,6 +9,7 @@ if (args.Length != 1)
 
 var inputFile = args[0];
 var preprocessedFile = Path.ChangeExtension(inputFile, ".i");
+var assemblyFile = Path.ChangeExtension(inputFile, ".s");
 var startInfo = new ProcessStartInfo
 {
   FileName = "gcc",
@@ -34,7 +35,26 @@ try
   process.WaitForExit();
 
   Console.Error.Write(diagnostics);
-  return process.ExitCode;
+  if (process.ExitCode != 0)
+  {
+    return process.ExitCode;
+  }
+
+  try
+  {
+    new Compiler().Compile(preprocessedFile, assemblyFile);
+    return 0;
+  }
+  catch (IOException)
+  {
+    Console.Error.WriteLine("Error: could not create the assembly file.");
+    return 1;
+  }
+  catch (UnauthorizedAccessException)
+  {
+    Console.Error.WriteLine("Error: could not access a compiler file.");
+    return 1;
+  }
 }
 catch (Win32Exception)
 {

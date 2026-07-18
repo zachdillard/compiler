@@ -3,6 +3,7 @@ bin/
 obj/
 out/
 *.i
+*.s
 
 # Test and coverage output
 TestResults/

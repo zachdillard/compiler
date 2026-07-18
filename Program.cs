@@ -1,7 +1,4 @@
-﻿using System.ComponentModel;
-using System.Diagnostics;
-
-if (args.Length != 1)
+﻿if (args.Length != 1)
 {
   Console.Error.WriteLine("Usage: Compiler <source-file>");
   return 1;
@@ -10,59 +7,25 @@ if (args.Length != 1)
 var inputFile = args[0];
 var preprocessedFile = Path.ChangeExtension(inputFile, ".i");
 var assemblyFile = Path.ChangeExtension(inputFile, ".s");
-var startInfo = new ProcessStartInfo
+
+var preprocessingExitCode = new Preprocessor().Preprocess(inputFile, preprocessedFile);
+if (preprocessingExitCode != 0)
 {
-  FileName = "gcc",
-  UseShellExecute = false,
-  RedirectStandardError = true,
-  CreateNoWindow = true,
-  ArgumentList =
-  {
-    "-E",
-    "-P",
-    inputFile,
-    "-o",
-    preprocessedFile
-  }
-};
+  return preprocessingExitCode;
+}
 
 try
 {
-  using var process = new Process { StartInfo = startInfo };
-  process.Start();
-
-  var diagnostics = process.StandardError.ReadToEnd();
-  process.WaitForExit();
-
-  Console.Error.Write(diagnostics);
-  if (process.ExitCode != 0)
-  {
-    return process.ExitCode;
-  }
-
-  try
-  {
-    new Compiler().Compile(preprocessedFile, assemblyFile);
-    return 0;
-  }
-  catch (IOException)
-  {
-    Console.Error.WriteLine("Error: could not create the assembly file.");
-    return 1;
-  }
-  catch (UnauthorizedAccessException)
-  {
-    Console.Error.WriteLine("Error: could not access a compiler file.");
-    return 1;
-  }
+  new Compiler().Compile(preprocessedFile, assemblyFile);
+  return 0;
 }
-catch (Win32Exception)
+catch (IOException)
 {
-  Console.Error.WriteLine("Error: could not start gcc. Ensure gcc is installed and available on PATH.");
+  Console.Error.WriteLine("Error: could not create the assembly file.");
   return 1;
 }
-catch (InvalidOperationException)
+catch (UnauthorizedAccessException)
 {
-  Console.Error.WriteLine("Error: could not start gcc.");
+  Console.Error.WriteLine("Error: could not access a compiler file.");
   return 1;
 }

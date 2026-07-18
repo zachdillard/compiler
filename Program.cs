@@ -7,6 +7,7 @@
 var inputFile = args[0];
 var preprocessedFile = Path.ChangeExtension(inputFile, ".i");
 var assemblyFile = Path.ChangeExtension(inputFile, ".s");
+var outputFile = Path.ChangeExtension(inputFile, null);
 
 var preprocessingExitCode = new Preprocessor().Preprocess(inputFile, preprocessedFile);
 if (preprocessingExitCode != 0)
@@ -17,7 +18,6 @@ if (preprocessingExitCode != 0)
 try
 {
   new Compiler().Compile(preprocessedFile, assemblyFile);
-  return 0;
 }
 catch (IOException)
 {
@@ -29,3 +29,5 @@ catch (UnauthorizedAccessException)
   Console.Error.WriteLine("Error: could not access a compiler file.");
   return 1;
 }
+
+return new Assembler().Assemble(assemblyFile, outputFile);

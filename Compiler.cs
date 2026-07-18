@@ -10,6 +10,7 @@ public class Compiler
     finally
     {
       File.Delete(preprocessedFile);
+      File.Delete(assemblyFile);
     }
   }
 }

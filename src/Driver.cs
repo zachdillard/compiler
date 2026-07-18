@@ -17,7 +17,11 @@ if (preprocessingExitCode != 0)
 
 try
 {
-  new Compiler().Compile(preprocessedFile, assemblyFile);
+  var compilerExitCode = new Compiler().Compile(preprocessedFile, assemblyFile);
+  if (compilerExitCode != 0)
+  {
+    return compilerExitCode;
+  }
 }
 catch (IOException)
 {

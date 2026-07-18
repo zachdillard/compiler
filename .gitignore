@@ -4,6 +4,7 @@ obj/
 out/
 *.i
 *.s
+/data/return_2
 
 # Test and coverage output
 TestResults/

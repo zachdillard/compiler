@@ -28,6 +28,14 @@ the result into an executable beside the input file. The example above creates
 `data/return_2`. Intermediate `.i` and `.s` files are removed after each
 successful stage.
 
+To generate assembly without linking an executable, use `-S`:
+
+```sh
+dotnet run -- -S data/return_2.c
+```
+
+This creates `data/return_2.s` and removes the intermediate `.i` file.
+
 You can run the generated executable with:
 
 ```sh

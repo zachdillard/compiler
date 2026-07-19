@@ -1,11 +1,11 @@
-if (args.Length != 1 && args.Length != 2)
+if (args.Length < 1 || args.Length > 2 || (args.Length == 1 && args[0].StartsWith('-')))
 {
   Console.Error.WriteLine("Usage: Compiler [-S] <source-file>");
   return 1;
 }
 
-var assemblyOnly = args.Length == 2 && args[0] == "-S";
-if (args.Length == 2 && !assemblyOnly)
+var assemblyOnly = args.Length == 2;
+if (assemblyOnly && args[0] != "-S")
 {
   Console.Error.WriteLine("Usage: Compiler [-S] <source-file>");
   return 1;

@@ -45,10 +45,10 @@ echo $?
 
 The example exits with status `2`.
 
-To run the book's chapter tests manually, use the root-level test runner:
+To run the book's chapter tests manually, use the test runner in `tests/`:
 
 ```sh
-./run_book_tests --chapter 1
+./tests/run_book_tests.sh --chapter 1
 ```
 
 The script forwards options to the book's `test_compiler` runner. Set

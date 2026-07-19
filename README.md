@@ -45,11 +45,10 @@ echo $?
 
 The example exits with status `2`.
 
-Run the integration tests from the repository root after building the compiler:
+Run the integration tests from the repository root:
 
 ```sh
-dotnet build
-dotnet test tests/Compiler.Tests/Compiler.Tests.csproj --no-restore
+dotnet test
 ```
 
 The tests require GCC to be available on `PATH`.

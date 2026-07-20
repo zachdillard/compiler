@@ -1,22 +1,48 @@
-if (args.Length < 1 || args.Length > 2 || (args.Length == 1 && args[0].StartsWith('-')))
+const string usage = "Usage: Compiler [-gcc] [-S] <source-file>";
+
+if (args.Length < 1 || args.Length > 3)
 {
-  Console.Error.WriteLine("Usage: Compiler [-S] <source-file>");
+  Console.Error.WriteLine(usage);
   return 1;
 }
 
-var assemblyOnly = args.Length == 2;
-if (assemblyOnly && args[0] != "-S")
+var assemblyOnly = false;
+var useGcc = false;
+string? inputFile = null;
+
+foreach (var argument in args)
 {
-  Console.Error.WriteLine("Usage: Compiler [-S] <source-file>");
+  switch (argument)
+  {
+    case "-S" when !assemblyOnly:
+      assemblyOnly = true;
+      break;
+    case "-gcc" when !useGcc:
+      useGcc = true;
+      break;
+    case var _ when argument.StartsWith('-'):
+      Console.Error.WriteLine(usage);
+      return 1;
+    case var _ when inputFile is null:
+      inputFile = argument;
+      break;
+    case var _:
+      Console.Error.WriteLine(usage);
+      return 1;
+  }
+}
+
+if (inputFile is null)
+{
+  Console.Error.WriteLine(usage);
   return 1;
 }
 
-var inputFile = assemblyOnly ? args[1] : args[0];
 var preprocessedFile = Path.ChangeExtension(inputFile, ".i");
 var assemblyFile = Path.ChangeExtension(inputFile, ".s");
 var outputFile = Path.ChangeExtension(inputFile, null);
 
-var preprocessingExitCode = new Preprocessor().Preprocess(inputFile, preprocessedFile);
+var preprocessingExitCode = new Preprocessor().Run(inputFile, preprocessedFile);
 if (preprocessingExitCode != 0)
 {
   return preprocessingExitCode;
@@ -24,7 +50,10 @@ if (preprocessingExitCode != 0)
 
 try
 {
-  var compilerExitCode = new Compiler().Compile(preprocessedFile, assemblyFile);
+  var compiler = new Compiler();
+  var compilerExitCode = useGcc
+    ? compiler.Compile(preprocessedFile, assemblyFile)
+    : compiler.Run(preprocessedFile, assemblyFile);
   if (compilerExitCode != 0)
   {
     return compilerExitCode;
@@ -46,4 +75,4 @@ if (assemblyOnly)
   return 0;
 }
 
-return new Assembler().Assemble(assemblyFile, outputFile);
+return new Assembler().Run(assemblyFile, outputFile);

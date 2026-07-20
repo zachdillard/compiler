@@ -11,18 +11,19 @@ public sealed class CompilerIntegrationTests
     var result = RunCompiler();
 
     Assert.Equal(1, result.ExitCode);
-    Assert.Contains("Usage: Compiler [-S] <source-file>", result.StandardError);
+    Assert.Contains("Usage: Compiler [-gcc] [-S] <source-file>", result.StandardError);
   }
 
   [Theory]
   [InlineData("-S")]
   [InlineData("--assembly")]
+  [InlineData("-unknown")]
   public void MalformedArgumentsPrintUsageAndFail(string argument)
   {
     var result = RunCompiler(argument);
 
     Assert.Equal(1, result.ExitCode);
-    Assert.Contains("Usage: Compiler [-S] <source-file>", result.StandardError);
+    Assert.Contains("Usage: Compiler [-gcc] [-S] <source-file>", result.StandardError);
   }
 
   [Fact]
@@ -30,7 +31,7 @@ public sealed class CompilerIntegrationTests
   {
     using var fixture = new TestFixture("int main(void) { return 7; }");
 
-    var result = RunCompiler("-S", fixture.SourcePath);
+    var result = RunCompiler("-gcc", "-S", fixture.SourcePath);
 
     Assert.Equal(0, result.ExitCode);
     Assert.True(File.Exists(fixture.AssemblyPath));
@@ -39,11 +40,23 @@ public sealed class CompilerIntegrationTests
   }
 
   [Fact]
+  public void AssemblyOnlyGccCompilationAcceptsFlagsInEitherOrder()
+  {
+    using var fixture = new TestFixture("int main(void) { return 7; }");
+
+    var result = RunCompiler("-S", "-gcc", fixture.SourcePath);
+
+    Assert.Equal(0, result.ExitCode);
+    Assert.True(File.Exists(fixture.AssemblyPath));
+    Assert.False(File.Exists(fixture.PreprocessedPath));
+  }
+
+  [Fact]
   public void NormalCompilationProducesExecutableAndRemovesIntermediateFiles()
   {
     using var fixture = new TestFixture("int main(void) { return 7; }");
 
-    var result = RunCompiler(fixture.SourcePath);
+    var result = RunCompiler("-gcc", fixture.SourcePath);
 
     Assert.Equal(0, result.ExitCode);
     Assert.True(File.Exists(fixture.ExecutablePath));
@@ -65,6 +78,29 @@ public sealed class CompilerIntegrationTests
   }
 
   [Fact]
+  public void DefaultCompilationUsesCustomCompilerAndCleansPreprocessedFile()
+  {
+    using var fixture = new TestFixture("int main(void) { return 7; }");
+
+    var result = RunCompiler(fixture.SourcePath);
+
+    Assert.Equal(1, result.ExitCode);
+    Assert.False(File.Exists(fixture.PreprocessedPath));
+    Assert.False(File.Exists(fixture.ExecutablePath));
+  }
+
+  [Fact]
+  public void DuplicateFlagsPrintUsageAndFail()
+  {
+    using var fixture = new TestFixture("int main(void) { return 7; }");
+
+    var result = RunCompiler("-gcc", "-gcc", fixture.SourcePath);
+
+    Assert.Equal(1, result.ExitCode);
+    Assert.Contains("Usage: Compiler [-gcc] [-S] <source-file>", result.StandardError);
+  }
+
+  [Fact]
   public void PreprocessingFailurePropagatesDiagnosticsAndFails()
   {
     using var fixture = new TestFixture("int main(void) { return 0; }");
@@ -81,7 +117,7 @@ public sealed class CompilerIntegrationTests
   {
     using var fixture = new TestFixture("int main( { return 0; }");
 
-    var result = RunCompiler(fixture.SourcePath);
+    var result = RunCompiler("-gcc", fixture.SourcePath);
 
     Assert.NotEqual(0, result.ExitCode);
     Assert.Contains("error", result.StandardError, StringComparison.OrdinalIgnoreCase);

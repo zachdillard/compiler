@@ -47,4 +47,17 @@ public class Compiler
       File.Delete(preprocessedFile);
     }
   }
+
+  public int Run(string preprocessedFile, string assemblyFile)
+  {
+    try
+    {
+      // Custom compiler implementation will replace this placeholder.
+      return 1;
+    }
+    finally
+    {
+      File.Delete(preprocessedFile);
+    }
+  }
 }

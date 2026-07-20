@@ -17,16 +17,23 @@ Build the compiler from the repository root:
 dotnet build
 ```
 
-Compile a C source file by passing its path as the only argument:
+Compile a C source file with the custom compiler by passing its path as the only argument:
 
 ```sh
 dotnet run -- data/return_2.c
 ```
 
-The compiler preprocesses the source with GCC, generates assembly, and links
-the result into an executable beside the input file. The example above creates
-`data/return_2`. Intermediate `.i` and `.s` files are removed after each
-successful stage.
+The custom compiler is still under development, so this mode currently exits
+with failure after preprocessing. To use the temporary GCC-backed compiler,
+pass `-gcc`:
+
+```sh
+dotnet run -- -gcc data/return_2.c
+```
+
+GCC preprocessing, assembly generation, and linking create an executable
+beside the input file. The example above creates `data/return_2`.
+Intermediate `.i` and `.s` files are removed after each successful stage.
 
 To generate assembly without linking an executable, use `-S`:
 
@@ -34,7 +41,15 @@ To generate assembly without linking an executable, use `-S`:
 dotnet run -- -S data/return_2.c
 ```
 
-This creates `data/return_2.s` and removes the intermediate `.i` file.
+This selects the custom compiler's assembly-only mode. To generate assembly
+with GCC, combine `-S` and `-gcc` in either order:
+
+```sh
+dotnet run -- -gcc -S data/return_2.c
+dotnet run -- -S -gcc data/return_2.c
+```
+
+These commands create `data/return_2.s` and remove the intermediate `.i` file.
 
 You can run the generated executable with:
 
@@ -43,7 +58,7 @@ You can run the generated executable with:
 echo $?
 ```
 
-The example exits with status `2`.
+The GCC example exits with status `2`.
 
 To run the book's chapter tests manually, use the test runner in `tests/`:
 

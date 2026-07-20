@@ -67,7 +67,9 @@ To run the book's chapter tests manually, use the test runner in `tests/`:
 ```
 
 The script forwards options to the book's `test_compiler` runner. Set
-`BOOK_TESTS_DIR` if the test checkout is in a different location.
+`BOOK_TESTS_DIR` if the test checkout is in a different location. See the
+[`writing-a-c-compiler-tests`](https://github.com/nlsandler/writing-a-c-compiler-tests)
+repository for additional test runner usage.
 
 Run the integration tests from the repository root:
 

@@ -1,91 +1,115 @@
 using System.Text.RegularExpressions;
 
+namespace Compiler;
+
 public partial class Lexer 
 {
     public static void Run(string input)
     {
         int length = 1;
+        ReadOnlySpan<char> lexeme;
         for (int index = 0; index < input.Length; index++)
         {
-            ReadOnlySpan<char> lexeme = input.AsSpan(index, length);
+            lexeme = input.AsSpan(index, length);
+            foreach(Regex pattern in Patterns)
+            {
+                if (pattern.IsMatch(lexeme))
+                    break;
+            }
+
+            foreach(Regex pattern in Patterns)
+            {
+                if (pattern.IsMatch(input.AsSpan(index, ++length)))
+                    break;
+            }
+
+            break;
         }
     }
 
-    private readonly union Token
-    (
-        IdentifierToken,
-        ConstantToken,
-        IntKeywordToken,
-        VoidKeywordToken,
-        ReturnKeywordToken,
-        OpenParenthesisToken,
-        CloseParenthesisToken,
-        OpenBraceToken,
-        CloseBraceToken,
-        SemicolonToken
-    );
+    private static readonly Regex[] Patterns =
+    [
+        IdentifierPattern,
+        ConstantPattern,
+        IntKeywordPattern,
+        VoidKeywordPattern,
+        ReturnKeywordPattern,
+        OpenParenthesisPattern,
+        CloseParenthesisPattern,
+        OpenBracePattern,
+        CloseBracePattern,
+        SemicolonPattern,
+    ];
 
     [GeneratedRegex(@"[a-zA-Z_]\w*\b", RegexOptions.Compiled)]
-    public static partial Regex IdentifierPattern { get; }
+    private static partial Regex IdentifierPattern { get; }
+
+    [GeneratedRegex(@"[0-9]+\b", RegexOptions.Compiled)]
+    private static partial Regex ConstantPattern { get; }
+
+    [GeneratedRegex(@"int\b", RegexOptions.Compiled)]
+    private static partial Regex IntKeywordPattern { get; }
+
+    [GeneratedRegex(@"void\b", RegexOptions.Compiled)]
+    private static partial Regex VoidKeywordPattern { get; }
+
+    [GeneratedRegex(@"return\b", RegexOptions.Compiled)]
+    private static partial Regex ReturnKeywordPattern { get; }
+
+    [GeneratedRegex(@"\(", RegexOptions.Compiled)]
+    private static partial Regex OpenParenthesisPattern { get; }
+
+    [GeneratedRegex(@"\)", RegexOptions.Compiled)]
+    private static partial Regex CloseParenthesisPattern { get; }
+
+    [GeneratedRegex(@"\{", RegexOptions.Compiled)]
+    private static partial Regex OpenBracePattern { get; }
+
+    [GeneratedRegex(@"\}", RegexOptions.Compiled)]
+    private static partial Regex CloseBracePattern { get; }
+
+    [GeneratedRegex(@";", RegexOptions.Compiled)]
+    private static partial Regex SemicolonPattern { get; }
 
     private partial record struct IdentifierToken
     {
-        public required string Value { get; set; }
+        public string Value;
     }
-
-    [GeneratedRegex(@"[0-9]+\b", RegexOptions.Compiled)]
-    public static partial Regex ConstantPattern { get; }
 
     private partial record struct ConstantToken
     {
-        public required string Value { get; set; }
+        public string Value;
     }
 
     private partial record struct IntKeywordToken
     {
-        [GeneratedRegex(@"int\b", RegexOptions.Compiled)]
-        public static partial Regex Pattern { get; }
     }
 
     private partial record struct VoidKeywordToken
     {
-        [GeneratedRegex(@"void\b", RegexOptions.Compiled)]
-        public static partial Regex Pattern { get; }
     }
 
     private partial record struct ReturnKeywordToken
     {
-        [GeneratedRegex(@"return\b", RegexOptions.Compiled)]
-        public static partial Regex Pattern { get; }
     }
 
     private partial record struct OpenParenthesisToken
     {
-        [GeneratedRegex(@"\(", RegexOptions.Compiled)]
-        public static partial Regex Pattern { get; }
     }
 
     private partial record struct CloseParenthesisToken
     {
-        [GeneratedRegex(@"\)", RegexOptions.Compiled)]
-        public static partial Regex Pattern { get; }
     }
 
     private partial record struct OpenBraceToken
     {
-        [GeneratedRegex(@"\{", RegexOptions.Compiled)]
-        public static partial Regex Pattern { get; }
     }
 
     private partial record struct CloseBraceToken
     {
-        [GeneratedRegex(@"\}", RegexOptions.Compiled)]
-        public static partial Regex Pattern { get; }
     }
 
     private partial record struct SemicolonToken
     {
-        [GeneratedRegex(@";", RegexOptions.Compiled)]
-        public static partial Regex Pattern { get; }
     }
 }

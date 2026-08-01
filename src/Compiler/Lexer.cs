@@ -2,17 +2,42 @@ using System.Text.RegularExpressions;
 
 public partial class Lexer 
 {
+    public static void Run(string input)
+    {
+        int length = 1;
+        for (int index = 0; index < input.Length; index++)
+        {
+            ReadOnlySpan<char> lexeme = input.AsSpan(index, length);
+        }
+    }
+
+    private readonly union Token
+    (
+        IdentifierToken,
+        ConstantToken,
+        IntKeywordToken,
+        VoidKeywordToken,
+        ReturnKeywordToken,
+        OpenParenthesisToken,
+        CloseParenthesisToken,
+        OpenBraceToken,
+        CloseBraceToken,
+        SemicolonToken
+    );
+
+    [GeneratedRegex(@"[a-zA-Z_]\w*\b", RegexOptions.Compiled)]
+    public static partial Regex IdentifierPattern { get; }
+
     private partial record struct IdentifierToken
     {
-        [GeneratedRegex(@"[a-zA-Z_]\w*\b", RegexOptions.Compiled)]
-        public static partial Regex Pattern { get; }
         public required string Value { get; set; }
     }
 
+    [GeneratedRegex(@"[0-9]+\b", RegexOptions.Compiled)]
+    public static partial Regex ConstantPattern { get; }
+
     private partial record struct ConstantToken
     {
-        [GeneratedRegex(@"[0-9]+\b", RegexOptions.Compiled)]
-        public static partial Regex Pattern { get; }
         public required string Value { get; set; }
     }
 
@@ -62,26 +87,5 @@ public partial class Lexer
     {
         [GeneratedRegex(@";", RegexOptions.Compiled)]
         public static partial Regex Pattern { get; }
-    }
-
-    private readonly union Token(
-        IdentifierToken,
-        ConstantToken,
-        IntKeywordToken,
-        VoidKeywordToken,
-        ReturnKeywordToken,
-        OpenParenthesisToken,
-        CloseParenthesisToken,
-        OpenBraceToken,
-        CloseBraceToken,
-        SemicolonToken
-    );
-
-    public void Run(string input)
-    {
-        string lexeme = string.Empty;
-        foreach (char character in input)
-        {
-        }
     }
 }

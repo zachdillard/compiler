@@ -1,30 +1,50 @@
+using System.Runtime.Intrinsics.Arm;
 using System.Text.RegularExpressions;
 
-namespace Compiler;
+// int main(void) { return 2; }
 
 public partial class Lexer 
 {
+    public static void Start(string input)
+    {
+        string lexeme;
+
+        while (input != string.Empty)
+        {
+            input = input.TrimStart(); 
+
+            foreach (Regex pattern in Patterns)
+            {
+                
+            }
+        }
+    }
+
     public static void Run(string input)
     {
         int length = 1;
         ReadOnlySpan<char> lexeme;
         for (int index = 0; index < input.Length; index++)
         {
+            if (char.IsWhiteSpace(input[index]))
+            {
+                continue;
+            }
+
             lexeme = input.AsSpan(index, length);
-            foreach(Regex pattern in Patterns)
+            foreach (Regex pattern in Patterns)
             {
                 if (pattern.IsMatch(lexeme))
+                {
                     break;
+                }
             }
-
-            foreach(Regex pattern in Patterns)
-            {
-                if (pattern.IsMatch(input.AsSpan(index, ++length)))
-                    break;
-            }
-
-            break;
         }
+    }
+
+    private static bool IsMatch()
+    {
+        return false;
     }
 
     private static readonly Regex[] Patterns =

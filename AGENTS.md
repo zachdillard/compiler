@@ -1,8 +1,8 @@
 # Repository Instructions
 
 - This is a learning, non-production project.
-- The project is a C#/.NET 11 implementation of the C compiler described in *Writing a C Compiler* by Nora Sandler. Keep compiler stages clear, testable, and easy to extend.
-- The .NET 11 SDK and GCC on `PATH` are required.
+- The project is a C#/.NET 10 implementation of the C compiler described in *Writing a C Compiler* by Nora Sandler. Keep compiler stages clear, testable, and easy to extend.
+- The .NET 10 SDK and GCC on `PATH` are required.
 - Keep changes simple, clear, and easy to understand.
 - Keep commit messages simple unless additional detail is required.
 - From the repository root, use `dotnet build` to build and `dotnet test` to run integration tests. Tests require GCC on `PATH`.

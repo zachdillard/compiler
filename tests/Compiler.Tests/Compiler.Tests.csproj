@@ -1,13 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net11.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <!-- Enable C# 15 preview features like Unions -->
-    <LangVersion>preview</LangVersion>
     <!-- Recommended: Keep null safety on for exhaustive matching -->
     <Nullable>enable</Nullable>
   </PropertyGroup>

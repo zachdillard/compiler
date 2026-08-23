@@ -139,7 +139,7 @@ public sealed class CompilerIntegrationTests
   private static ProcessResult RunCompiler(params string[] arguments)
   {
     var compilerProjectDirectory = FindRepositoryRoot();
-    var compilerAssembly = Path.Combine(compilerProjectDirectory, "bin", "Debug", "net11.0", "Compiler.dll");
+    var compilerAssembly = Path.Combine(compilerProjectDirectory, "bin", "Debug", "net10.0", "Compiler.dll");
 
     Assert.True(File.Exists(compilerAssembly), $"Build the compiler before running integration tests: {compilerAssembly}");
 

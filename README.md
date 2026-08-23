@@ -79,6 +79,22 @@ dotnet test
 
 The tests require GCC to be available on `PATH`.
 
+## Concepts
+
+The `concepts/` folder contains self-contained, file-based C# examples. Each
+example can be run individually from that folder with:
+
+```sh
+cd concepts
+dotnet <concept-name>.cs
+```
+
+For example:
+
+```sh
+dotnet basic-regex-lexer.cs
+```
+
 ## Status
 
 > [!WARNING]

@@ -2,7 +2,7 @@
 
 set -eu
 
-project_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+project_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 book_tests_dir=${BOOK_TESTS_DIR:-/Users/zach/Projects/nlsandler/writing-a-c-compiler-tests}
 compiler="$project_dir/bin/Debug/net10.0/Compiler"
 runner="$book_tests_dir/test_compiler"

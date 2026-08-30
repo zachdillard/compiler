@@ -48,12 +48,12 @@ public class Compiler
     }
   }
 
-  public int Run(string preprocessedFile, string assemblyFile)
+  public int Run(string preprocessedFile)
   {
     try
     {
-      // Custom compiler implementation will replace this placeholder.
-      return 1;
+      Lexer.Run(File.ReadAllText(preprocessedFile));
+      return 0;
     }
     finally
     {

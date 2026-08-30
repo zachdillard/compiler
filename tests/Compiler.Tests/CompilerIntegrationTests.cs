@@ -11,7 +11,7 @@ public sealed class CompilerIntegrationTests
     var result = RunCompiler();
 
     Assert.Equal(1, result.ExitCode);
-    Assert.Contains("Usage: Compiler [-gcc] [-S] <source-file>", result.StandardError);
+    Assert.Contains("Usage: Compiler [-gcc] [-S] [--lex] <source-file>", result.StandardError);
   }
 
   [Theory]
@@ -23,7 +23,7 @@ public sealed class CompilerIntegrationTests
     var result = RunCompiler(argument);
 
     Assert.Equal(1, result.ExitCode);
-    Assert.Contains("Usage: Compiler [-gcc] [-S] <source-file>", result.StandardError);
+    Assert.Contains("Usage: Compiler [-gcc] [-S] [--lex] <source-file>", result.StandardError);
   }
 
   [Fact]
@@ -97,7 +97,7 @@ public sealed class CompilerIntegrationTests
     var result = RunCompiler("-gcc", "-gcc", fixture.SourcePath);
 
     Assert.Equal(1, result.ExitCode);
-    Assert.Contains("Usage: Compiler [-gcc] [-S] <source-file>", result.StandardError);
+    Assert.Contains("Usage: Compiler [-gcc] [-S] [--lex] <source-file>", result.StandardError);
   }
 
   [Fact]

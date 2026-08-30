@@ -1,4 +1,4 @@
-const string usage = "Usage: Compiler [-gcc] [-S] <source-file>";
+const string usage = "Usage: Compiler [-gcc] [-S] [--lex] <source-file>";
 
 if (args.Length < 1 || args.Length > 3)
 {
@@ -7,6 +7,7 @@ if (args.Length < 1 || args.Length > 3)
 }
 
 var assemblyOnly = false;
+var lexOnly = false;
 var useGcc = false;
 string? inputFile = null;
 
@@ -16,6 +17,9 @@ foreach (var argument in args)
   {
     case "-S" when !assemblyOnly:
       assemblyOnly = true;
+      break;
+    case "--lex" when !lexOnly:
+      lexOnly = true;
       break;
     case "-gcc" when !useGcc:
       useGcc = true;
@@ -51,9 +55,9 @@ if (preprocessingExitCode != 0)
 try
 {
   var compiler = new Compiler();
-  var compilerExitCode = useGcc
+  var compilerExitCode = useGcc && !lexOnly
     ? compiler.Compile(preprocessedFile, assemblyFile)
-    : compiler.Run(preprocessedFile, assemblyFile);
+    : compiler.Run(preprocessedFile);
   if (compilerExitCode != 0)
   {
     return compilerExitCode;
@@ -70,7 +74,7 @@ catch (UnauthorizedAccessException)
   return 1;
 }
 
-if (assemblyOnly)
+if (lexOnly || assemblyOnly)
 {
   return 0;
 }

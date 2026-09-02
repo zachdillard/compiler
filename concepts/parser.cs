@@ -1,10 +1,10 @@
-List<string> tokens = [];
+List<string> tokens = ["int", "main", "(", "void", ")", "{", "return", "2", ";", "}"];
 
 var program = ParseProgram(tokens);
 
 ProgramNode ParseProgram(List<string> tokens)
 {
-    return null;
+    return new ProgramNode(ParseFunction(tokens));
 }
 
 FunctionNode ParseFunction(List<string> tokens)

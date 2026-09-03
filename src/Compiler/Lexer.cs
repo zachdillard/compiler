@@ -2,8 +2,10 @@ using System.Text.RegularExpressions;
 
 public partial class Lexer
 {
-    public static void Run(string input)
+    public static List<Token> Run(string input)
     {
+        var tokens = new List<Token>();
+
         while (input != string.Empty)
         {
             input = input.TrimStart();
@@ -25,18 +27,18 @@ public partial class Lexer
                 matched = true;
                 var value = match.Value;
 
-                Console.WriteLine(pattern switch
+                tokens.Add(new Token(pattern switch
                 {
                     var identifier when identifier == IdentifierRegex =>
-                        $"{(Array.IndexOf(Keywords, value) >= 0 ? "keyword" : "identifier")}: {value}",
-                    var constant when constant == ConstantRegex => $"constant: {value}",
-                    var openParenthesis when openParenthesis == OpenParenthesisRegex => $"open_parenthesis: {value}",
-                    var closeParenthesis when closeParenthesis == CloseParenthesisRegex => $"close_parenthesis: {value}",
-                    var openBrace when openBrace == OpenBraceRegex => $"open_brace: {value}",
-                    var closeBrace when closeBrace == CloseBraceRegex => $"close_brace: {value}",
-                    var semicolon when semicolon == SemicolonRegex => $"semicolon: {value}",
+                        Array.IndexOf(Keywords, value) >= 0 ? TokenType.Keyword : TokenType.Identifier,
+                    var constant when constant == ConstantRegex => TokenType.Constant,
+                    var openParenthesis when openParenthesis == OpenParenthesisRegex => TokenType.OpenParenthesis,
+                    var closeParenthesis when closeParenthesis == CloseParenthesisRegex => TokenType.CloseParenthesis,
+                    var openBrace when openBrace == OpenBraceRegex => TokenType.OpenBrace,
+                    var closeBrace when closeBrace == CloseBraceRegex => TokenType.CloseBrace,
+                    var semicolon when semicolon == SemicolonRegex => TokenType.Semicolon,
                     _ => throw new InvalidOperationException("Unknown lexer pattern.")
-                });
+                }, value));
 
                 input = input[match.Length..];
                 break;
@@ -47,6 +49,8 @@ public partial class Lexer
                 throw new InvalidOperationException($"Unexpected character: '{input[0]}'");
             }
         }
+
+        return tokens;
     }
 
     private static readonly Regex[] Patterns =

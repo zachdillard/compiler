@@ -7,7 +7,8 @@
 - Keep commit messages simple unless additional detail is required.
 - From the repository root, use `dotnet build` to build and `dotnet test` to run integration tests. Tests require GCC on `PATH`.
 - Run the book's chapter tests with `./tests/run_book_tests.sh --chapter <number>`. The script forwards options to the book's `test_compiler` runner; use `BOOK_TESTS_DIR` when the test checkout is elsewhere.
-- The compiler accepts one C source path: `dotnet run -- <source-file>`. This selects the custom compiler implementation, which is currently a placeholder and returns failure after preprocessing.
+- The compiler accepts one C source path: `dotnet run -- <source-file>`. This selects the custom compiler implementation, which currently lexes and parses the source; code generation is still missing, so a full compile still fails.
+- Use `dotnet run -- --lex <source-file>` to stop after lexing and print tokens, or `dotnet run -- --parse <source-file>` to stop after parsing and print the AST. See `docs/ast.md` for the grammar and AST nodes.
 - Use `dotnet run -- -gcc <source-file>` to select the temporary GCC-backed compiler. GCC preprocessing, assembly generation, and linking produce an executable beside the input; intermediate `.i` and `.s` files are removed after successful stages.
 - Use `dotnet run -- -S <source-file>` for custom assembly-only mode, or combine `-S` and `-gcc` in either order (`dotnet run -- -gcc -S <source-file>`) for GCC assembly output without linking. The intermediate `.i` file is removed.
 - The `concepts/` folder contains self-contained, file-based C# examples. From that folder, run an example individually with `dotnet <concept-name>.cs`.

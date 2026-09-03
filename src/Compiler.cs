@@ -48,16 +48,44 @@ public class Compiler
     }
   }
 
-  public int Run(string preprocessedFile)
+  public int Run(string preprocessedFile, Stage stage)
   {
     try
     {
-      Lexer.Run(File.ReadAllText(preprocessedFile));
+      var tokens = Lexer.Run(File.ReadAllText(preprocessedFile));
+      if (stage == Stage.Lex)
+      {
+        foreach (var token in tokens)
+        {
+          Console.WriteLine(token);
+        }
+
+        return 0;
+      }
+
+      var program = Parser.Run(tokens);
+      if (stage == Stage.Parse)
+      {
+        Console.WriteLine(program);
+      }
+
       return 0;
+    }
+    catch (InvalidOperationException exception)
+    {
+      Console.Error.WriteLine($"Error: {exception.Message}");
+      return 1;
     }
     finally
     {
       File.Delete(preprocessedFile);
     }
   }
+}
+
+public enum Stage
+{
+  Lex,
+  Parse,
+  All
 }

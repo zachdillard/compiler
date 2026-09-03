@@ -11,7 +11,7 @@ public sealed class CompilerIntegrationTests
     var result = RunCompiler();
 
     Assert.Equal(1, result.ExitCode);
-    Assert.Contains("Usage: Compiler [-gcc] [-S] [--lex] <source-file>", result.StandardError);
+    Assert.Contains("Usage: Compiler [-gcc] [-S] [--lex] [--parse] <source-file>", result.StandardError);
   }
 
   [Theory]
@@ -23,7 +23,7 @@ public sealed class CompilerIntegrationTests
     var result = RunCompiler(argument);
 
     Assert.Equal(1, result.ExitCode);
-    Assert.Contains("Usage: Compiler [-gcc] [-S] [--lex] <source-file>", result.StandardError);
+    Assert.Contains("Usage: Compiler [-gcc] [-S] [--lex] [--parse] <source-file>", result.StandardError);
   }
 
   [Fact]
@@ -90,6 +90,65 @@ public sealed class CompilerIntegrationTests
   }
 
   [Fact]
+  public void LexOnlyModePrintsTokensAndSucceeds()
+  {
+    using var fixture = new TestFixture("int main(void) { return 7; }");
+
+    var result = RunCompiler("--lex", fixture.SourcePath);
+
+    Assert.Equal(0, result.ExitCode);
+    Assert.Contains("keyword: int", result.StandardOutput);
+    Assert.Contains("identifier: main", result.StandardOutput);
+    Assert.Contains("constant: 7", result.StandardOutput);
+    Assert.False(File.Exists(fixture.PreprocessedPath));
+    Assert.False(File.Exists(fixture.AssemblyPath));
+  }
+
+  [Fact]
+  public void ParseOnlyModePrintsAbstractSyntaxTreeAndSucceeds()
+  {
+    using var fixture = new TestFixture("int main(void) { return 7; }");
+
+    var result = RunCompiler("--parse", fixture.SourcePath);
+
+    Assert.Equal(0, result.ExitCode);
+    Assert.Contains("Identifier = main", result.StandardOutput);
+    Assert.Contains("Constant = 7", result.StandardOutput);
+    Assert.False(File.Exists(fixture.PreprocessedPath));
+    Assert.False(File.Exists(fixture.AssemblyPath));
+  }
+
+  [Theory]
+  [InlineData("int main(void) { return 7 }")]
+  [InlineData("int main(void) { return; }")]
+  [InlineData("int main(void) { RETURN 7; }")]
+  [InlineData("int 3(void) { return 7; }")]
+  [InlineData("int main(void) { return 7; } junk")]
+  [InlineData("int main(void) { return")]
+  public void ParseOnlyModeRejectsMalformedProgramsWithDiagnostics(string source)
+  {
+    using var fixture = new TestFixture(source);
+
+    var result = RunCompiler("--parse", fixture.SourcePath);
+
+    Assert.Equal(1, result.ExitCode);
+    Assert.Contains("Error:", result.StandardError);
+    Assert.False(File.Exists(fixture.PreprocessedPath));
+  }
+
+  [Fact]
+  public void LexOnlyModeRejectsInvalidTokensWithDiagnostics()
+  {
+    using var fixture = new TestFixture("int main(void) { return 7@; }");
+
+    var result = RunCompiler("--lex", fixture.SourcePath);
+
+    Assert.Equal(1, result.ExitCode);
+    Assert.Contains("Unexpected character", result.StandardError);
+    Assert.False(File.Exists(fixture.PreprocessedPath));
+  }
+
+  [Fact]
   public void DuplicateFlagsPrintUsageAndFail()
   {
     using var fixture = new TestFixture("int main(void) { return 7; }");
@@ -97,7 +156,7 @@ public sealed class CompilerIntegrationTests
     var result = RunCompiler("-gcc", "-gcc", fixture.SourcePath);
 
     Assert.Equal(1, result.ExitCode);
-    Assert.Contains("Usage: Compiler [-gcc] [-S] [--lex] <source-file>", result.StandardError);
+    Assert.Contains("Usage: Compiler [-gcc] [-S] [--lex] [--parse] <source-file>", result.StandardError);
   }
 
   [Fact]

@@ -1,6 +1,6 @@
-const string usage = "Usage: Compiler [-gcc] [-S] [--lex] <source-file>";
+const string usage = "Usage: Compiler [-gcc] [-S] [--lex] [--parse] <source-file>";
 
-if (args.Length < 1 || args.Length > 3)
+if (args.Length < 1 || args.Length > 4)
 {
   Console.Error.WriteLine(usage);
   return 1;
@@ -8,6 +8,7 @@ if (args.Length < 1 || args.Length > 3)
 
 var assemblyOnly = false;
 var lexOnly = false;
+var parseOnly = false;
 var useGcc = false;
 string? inputFile = null;
 
@@ -20,6 +21,9 @@ foreach (var argument in args)
       break;
     case "--lex" when !lexOnly:
       lexOnly = true;
+      break;
+    case "--parse" when !parseOnly:
+      parseOnly = true;
       break;
     case "-gcc" when !useGcc:
       useGcc = true;
@@ -42,6 +46,10 @@ if (inputFile is null)
   return 1;
 }
 
+var stage = lexOnly ? Stage.Lex
+  : parseOnly ? Stage.Parse
+  : Stage.All;
+
 var preprocessedFile = Path.ChangeExtension(inputFile, ".i");
 var assemblyFile = Path.ChangeExtension(inputFile, ".s");
 var outputFile = Path.ChangeExtension(inputFile, null);
@@ -55,9 +63,9 @@ if (preprocessingExitCode != 0)
 try
 {
   var compiler = new Compiler();
-  var compilerExitCode = useGcc && !lexOnly
+  var compilerExitCode = useGcc && stage == Stage.All
     ? compiler.Compile(preprocessedFile, assemblyFile)
-    : compiler.Run(preprocessedFile);
+    : compiler.Run(preprocessedFile, stage);
   if (compilerExitCode != 0)
   {
     return compilerExitCode;
@@ -74,7 +82,7 @@ catch (UnauthorizedAccessException)
   return 1;
 }
 
-if (lexOnly || assemblyOnly)
+if (stage != Stage.All || assemblyOnly)
 {
   return 0;
 }

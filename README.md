@@ -23,9 +23,9 @@ Compile a C source file with the custom compiler by passing its path as the only
 dotnet run -- data/return_2.c
 ```
 
-The custom compiler currently implements lexing, but later stages are still
-under development. To stop after lexing and print the recognized tokens, pass
-`--lex`:
+The custom compiler currently implements lexing and parsing, but later stages
+are still under development. To stop after lexing and print the recognized
+tokens, pass `--lex`:
 
 ```sh
 dotnet run -- --lex data/return_2.c
@@ -34,10 +34,26 @@ dotnet run -- --lex data/return_2.c
 A lexically valid file exits with status `0`; an invalid token produces a
 nonzero exit status. Lex-only mode does not create assembly or an executable.
 
+To stop after parsing and print the abstract syntax tree, pass `--parse`:
+
+```sh
+dotnet run -- --parse data/return_2.c
+```
+
+```
+ProgramNode { Function = FunctionNode { Identifier = main, Statement = ReturnStatementNode { Expression = ConstantExpressionNode { Constant = 2 } } } }
+```
+
+A syntactically valid file exits with status `0`; a syntax error is reported on
+standard error and produces a nonzero exit status. Parse-only mode does not
+create assembly or an executable. See [`docs/ast.md`](docs/ast.md) for the
+grammar and the AST nodes the parser builds.
+
 To test a specific file from the book's test suite, pass its path directly:
 
 ```sh
 dotnet run -- --lex /path/to/writing-a-c-compiler-tests/tests/chapter_1/valid/return_2.c
+dotnet run -- --parse /path/to/writing-a-c-compiler-tests/tests/chapter_1/valid/return_2.c
 ```
 
 To use the temporary GCC-backed compiler, pass `-gcc`:
@@ -79,9 +95,10 @@ To run the book's chapter tests manually, use the test runner in `tests/`:
 
 ```sh
 ./tests/run_book_tests.sh --chapter 1 --stage lex
+./tests/run_book_tests.sh --chapter 1 --stage parse
 ```
 
-This runs the chapter-one lexer tests, including lexically valid and invalid
+These run the chapter-one lexer and parser tests, including valid and invalid
 programs. The script forwards options to the book's `test_compiler` runner.
 Set `BOOK_TESTS_DIR` if the test checkout is in a different location. See the
 [`writing-a-c-compiler-tests`](https://github.com/nlsandler/writing-a-c-compiler-tests)

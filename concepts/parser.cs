@@ -1,7 +1,10 @@
+#!/usr/bin/env -S dotnet --
+
 List<string> tokens = ["int", "main", "(", "void", ")", "{", "return", "2", ";", "}"];
 List<string> keywords = ["int", "void", "return"];
 
-var program = ParseProgram(tokens);
+AST ast = ParseProgram(tokens);
+Console.WriteLine(ast);
 
 ProgramNode ParseProgram(List<string> tokens)
 {

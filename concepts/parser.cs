@@ -39,8 +39,10 @@ string TakeToken(List<string> tokens)
     return token;
 }
 
-abstract record Node;
-record ProgramNode(FunctionNode FunctionDefinition) : Node;
-record FunctionNode(string Name, StatementNode Body) : Node;
-record StatementNode(ExpressionNode Return) : Node;
-record ExpressionNode(int Constant) : Node;
+abstract record AST;
+record ProgramNode(FunctionNode FunctionDefinition) : AST;
+record FunctionNode(string Name, StatementNode Body) : AST;
+record StatementNode() : AST;
+record ReturnStatementNode(ExpressionNode Expression) : StatementNode;
+record ExpressionNode() : AST;
+record ConstantExpressionNode(int Constant) : ExpressionNode;

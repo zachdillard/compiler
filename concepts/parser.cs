@@ -14,11 +14,7 @@ ProgramNode ParseProgram(List<string> tokens)
 FunctionNode ParseFunction(List<string> tokens)
 {
     Expect("int", tokens);
-
-    string identifier = TakeToken(tokens);
-    if (keywords.Contains(identifier))
-        throw new InvalidOperationException();
-
+    string identifier = ParseIdentifier(tokens);
     Expect("(", tokens);
     Expect("void", tokens);
     Expect(")", tokens);
@@ -40,11 +36,25 @@ StatementNode ParseStatement(List<string> tokens)
 
 ExpressionNode ParseExpression(List<string> tokens)
 {
+    return new ConstantExpressionNode(ParseInt(tokens));
+}
+
+string ParseIdentifier(List<string> tokens)
+{
+    string identifier = TakeToken(tokens);
+    if (keywords.Contains(identifier))
+        throw new InvalidOperationException();
+
+    return identifier;
+}
+
+int ParseInt(List<string> tokens)
+{
     string token = TakeToken(tokens);
     if (int.TryParse(token, out int constant) == false)
         throw new InvalidOperationException();
 
-    return new ConstantExpressionNode(constant);
+    return constant;
 }
 
 void Expect(string expected, List<string> tokens)

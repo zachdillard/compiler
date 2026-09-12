@@ -1,0 +1,17 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build parser.cs",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "${workspaceFolder}/concepts/parser.cs",
+        "--output",
+        "${workspaceFolder}/obj/parser-debug"
+      ],
+      "problemMatcher": "$msCompile"
+    }
+  ]
+}

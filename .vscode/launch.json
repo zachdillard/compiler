@@ -8,6 +8,14 @@
       "preLaunchTask": "Build parser.cs",
       "program": "${workspaceFolder}/obj/parser-debug/parser.dll",
       "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Debug preview-parser.cs",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "Build preview-parser.cs",
+      "program": "${workspaceFolder}/obj/preview-parser-debug/preview-parser.dll",
+      "cwd": "${workspaceFolder}"
     }
   ]
 }

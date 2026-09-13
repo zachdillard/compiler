@@ -12,6 +12,18 @@
         "${workspaceFolder}/obj/parser-debug"
       ],
       "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Build preview-parser.cs",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "${workspaceFolder}/concepts/preview-parser.cs",
+        "--output",
+        "${workspaceFolder}/obj/preview-parser-debug"
+      ],
+      "problemMatcher": "$msCompile"
     }
   ]
 }

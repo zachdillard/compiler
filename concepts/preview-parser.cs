@@ -1,6 +1,7 @@
 #!/usr/bin/env -S dotnet --
 #:property LangVersion=preview
 
+using System.Text;
 using System.Text.RegularExpressions;
 
 string input = "int main(void) { return 2; }";
@@ -152,7 +153,21 @@ Assembly.Imm GenerateImmediate(C.Constant expression)
 
 string Emit(Assembly.Program asm)
 {
-    return string.Empty;
+    StringBuilder output = new();
+
+    output.AppendLine($".global _{asm.Function.Identifer}");
+    output.AppendLine(EmitFunction(asm.Function));
+
+    return output.ToString();
+}
+
+string EmitFunction(Assembly.Function function)
+{
+    StringBuilder output = new();
+
+    // Emit
+
+    return output.ToString();
 }
 
 readonly union Token

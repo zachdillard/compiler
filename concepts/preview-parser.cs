@@ -6,10 +6,11 @@ using System.Text.RegularExpressions;
 string input = "int main(void) { return 2; }";
 
 List<Token> tokens = Lex(input);
-
 C.Program program = ParseProgram(tokens);
+Assembly.Program asm = GenerateProgram(program);
 
 Console.WriteLine(program);
+Console.WriteLine(asm);
 
 List<Token> Lex(string input)
 {
@@ -117,6 +118,35 @@ Token TakeToken(List<Token> tokens)
     Token token = tokens.First();
     tokens.RemoveAt(0);
     return token;
+}
+
+Assembly.Program GenerateProgram(C.Program program)
+{
+    Assembly.Function function = GenerateFunction(program.Function);
+    return new Assembly.Program(function);
+}
+
+Assembly.Function GenerateFunction(C.Function function)
+{
+    List<Assembly.Instruction> instructions = GenerateInstructions(function.Statement);
+    return new Assembly.Function(function.Identifier, instructions);
+}
+
+List<Assembly.Instruction> GenerateInstructions(C.Return statement)
+{
+    Assembly.Imm imm = GenerateImmediate(statement.Expression);
+    Assembly.Register reg = new();
+
+    return
+    [
+        new Assembly.Mov(imm, reg),
+        new Assembly.Ret()
+    ];
+}
+
+Assembly.Imm GenerateImmediate(C.Constant expression)
+{
+    return new Assembly.Imm(expression.Value);
 }
 
 readonly union Token

@@ -7,7 +7,7 @@ string input = "int main(void) { return 2; }";
 
 List<Token> tokens = Lex(input);
 
-Syntax.Program program = ParseProgram(tokens);
+C.Program program = ParseProgram(tokens);
 
 Console.WriteLine(program);
 
@@ -57,12 +57,12 @@ Token CreateToken(Type type, string value) => type switch
     _ => throw new InvalidOperationException()
 };
 
-Syntax.Program ParseProgram(List<Token> tokens)
+C.Program ParseProgram(List<Token> tokens)
 {
-    return new Syntax.Program(ParseFunction(tokens));
+    return new C.Program(ParseFunction(tokens));
 }
 
-Syntax.Function ParseFunction(List<Token> tokens)
+C.Function ParseFunction(List<Token> tokens)
 {
     Expect<Int>(tokens);
     string identifier = ParseIdentifier(tokens);
@@ -70,24 +70,24 @@ Syntax.Function ParseFunction(List<Token> tokens)
     Expect<Void>(tokens);
     Expect<CloseParenthesis>(tokens);
     Expect<OpenBrace>(tokens);
-    Syntax.Return statement = ParseStatement(tokens);
+    C.Return statement = ParseStatement(tokens);
     Expect<CloseBrace>(tokens);
 
-    return new Syntax.Function(identifier, statement);
+    return new C.Function(identifier, statement);
 }
 
-Syntax.Return ParseStatement(List<Token> tokens)
+C.Return ParseStatement(List<Token> tokens)
 {
     Expect<Return>(tokens);
-    Syntax.Constant expression = ParseExpression(tokens);
+    C.Constant expression = ParseExpression(tokens);
     Expect<Semicolon>(tokens);
 
-    return new Syntax.Return(expression);
+    return new C.Return(expression);
 }
 
-Syntax.Constant ParseExpression(List<Token> tokens)
+C.Constant ParseExpression(List<Token> tokens)
 {
-    return new Syntax.Constant(ParseInt(tokens));
+    return new C.Constant(ParseInt(tokens));
 }
 
 string ParseIdentifier(List<Token> tokens)
@@ -144,6 +144,26 @@ record OpenBrace();
 record CloseBrace();
 record Semicolon();
 
+namespace C
+{
+    record Program(Function Function);
+    record Function(string Identifier, Return Statement);
+    record Return(Constant Expression);
+    record Constant(int Value);
+}
+
+namespace Assembly
+{
+    record Program(Function Function);
+    record Function(string Identifer, List<Instruction> Instructions);
+    readonly union Instruction(Mov, Ret);
+    record Mov(Operand Source, Operand Destination);
+    record Ret();
+    readonly union Operand(Imm, Register);
+    record Imm(int Value);
+    record Register();
+}
+
 partial class Program
 {
     private static readonly List<KeyValuePair<Type, Regex>> Patterns =
@@ -189,12 +209,4 @@ partial class Program
 
     [GeneratedRegex(@";")]
     private static partial Regex SemicolonPattern { get; }
-}
-
-namespace Syntax
-{
-    record Program(Function Function);
-    record Function(string Identifier, Return Statement);
-    record Return(Constant Expression);
-    record Constant(int Value);
 }

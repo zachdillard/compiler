@@ -4,7 +4,12 @@
 using System.Text;
 using System.Text.RegularExpressions;
 
-string input = "int main(void) { return 2; }";
+string input =
+"""
+int main(void) {
+    return 2;
+}
+""";
 
 List<Token> tokens = Lex(input);
 C.Program c = Parse(tokens);
@@ -12,6 +17,7 @@ Assembly.Program asm = Generate(c);
 string output = Emit(asm);
 
 Console.WriteLine(input);
+Console.WriteLine();
 Console.WriteLine(output);
 
 List<Token> Lex(string input)
@@ -155,7 +161,7 @@ string Emit(Assembly.Program asm)
 {
     StringBuilder output = new();
 
-    output.AppendLine($".global _{asm.Function.Identifer}");
+    output.AppendLine($"\t.globl _{asm.Function.Identifer}");
     output.AppendLine(EmitFunction(asm.Function));
 
     return output.ToString();
@@ -165,10 +171,26 @@ string EmitFunction(Assembly.Function function)
 {
     StringBuilder output = new();
 
-    // Emit
+    output.AppendLine($"{function.Identifer}:");
+    foreach (Assembly.Instruction instruction in function.Instructions)
+        output.AppendLine($"\t{EmitInstruction(instruction)}");
 
     return output.ToString();
 }
+
+string EmitInstruction(Assembly.Instruction instruction) => instruction switch
+{
+    Assembly.Mov mov => $"movl {EmitOperand(mov.Source)}, {EmitOperand(mov.Destination)}",
+    Assembly.Ret _ => "ret",
+    _ => throw new InvalidOperationException()
+};
+
+string EmitOperand(Assembly.Operand operand) => operand switch
+{
+    Assembly.Imm imm => $"${imm.Value}",
+    Assembly.Register => "%eax",
+    _ => throw new InvalidOperationException()
+};
 
 readonly union Token
 (

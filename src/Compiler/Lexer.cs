@@ -1,66 +1,82 @@
 using System.Text.RegularExpressions;
 
+public enum TokenKind
+{
+    Identifier, Int, Void, Return, Constant,
+    OpenParenthesis, CloseParenthesis, OpenBrace, CloseBrace, Semicolon
+}
+
+public record Token(TokenKind Kind, string Text);
+
 public partial class Lexer
 {
-    public static void Run(string input)
+    public static List<Token> Tokenize(string input) => Scan(input).ToList();
+
+    private static IEnumerable<Token> Scan(string input)
     {
         while (input != string.Empty)
         {
             input = input.TrimStart();
             if (input == string.Empty)
-            {
                 break;
-            }
 
-            var matched = false;
-
-            foreach (var pattern in Patterns)
+            bool matched = false;
+            foreach (Regex pattern in Patterns)
             {
-                var match = pattern.Match(input);
+                Match match = pattern.Match(input);
                 if (!match.Success || match.Index != 0)
-                {
                     continue;
-                }
 
-                matched = true;
-                var value = match.Value;
-
-                Console.WriteLine(pattern switch
+                string value = match.Value;
+                TokenKind kind = pattern == IdentifierRegex ? value switch
                 {
-                    var identifier when identifier == IdentifierRegex =>
-                        $"{(Array.IndexOf(Keywords, value) >= 0 ? "keyword" : "identifier")}: {value}",
-                    var constant when constant == ConstantRegex => $"constant: {value}",
-                    var openParenthesis when openParenthesis == OpenParenthesisRegex => $"open_parenthesis: {value}",
-                    var closeParenthesis when closeParenthesis == CloseParenthesisRegex => $"close_parenthesis: {value}",
-                    var openBrace when openBrace == OpenBraceRegex => $"open_brace: {value}",
-                    var closeBrace when closeBrace == CloseBraceRegex => $"close_brace: {value}",
-                    var semicolon when semicolon == SemicolonRegex => $"semicolon: {value}",
-                    _ => throw new InvalidOperationException("Unknown lexer pattern.")
-                });
+                    "int" => TokenKind.Int,
+                    "void" => TokenKind.Void,
+                    "return" => TokenKind.Return,
+                    _ => TokenKind.Identifier
+                } : pattern == ConstantRegex ? TokenKind.Constant
+                  : pattern == OpenParenthesisRegex ? TokenKind.OpenParenthesis
+                  : pattern == CloseParenthesisRegex ? TokenKind.CloseParenthesis
+                  : pattern == OpenBraceRegex ? TokenKind.OpenBrace
+                  : pattern == CloseBraceRegex ? TokenKind.CloseBrace
+                  : TokenKind.Semicolon;
 
+                yield return new Token(kind, value);
                 input = input[match.Length..];
+                matched = true;
                 break;
             }
 
             if (!matched)
-            {
                 throw new InvalidOperationException($"Unexpected character: '{input[0]}'");
-            }
+        }
+    }
+
+    public static void Run(string input)
+    {
+        foreach (Token token in Scan(input))
+        {
+            string category = token.Kind switch
+            {
+                TokenKind.Identifier => "identifier",
+                TokenKind.Int or TokenKind.Void or TokenKind.Return => "keyword",
+                TokenKind.Constant => "constant",
+                TokenKind.OpenParenthesis => "open_parenthesis",
+                TokenKind.CloseParenthesis => "close_parenthesis",
+                TokenKind.OpenBrace => "open_brace",
+                TokenKind.CloseBrace => "close_brace",
+                TokenKind.Semicolon => "semicolon",
+                _ => throw new InvalidOperationException("Unknown token kind.")
+            };
+            Console.WriteLine($"{category}: {token.Text}");
         }
     }
 
     private static readonly Regex[] Patterns =
     [
-        IdentifierRegex,
-        ConstantRegex,
-        OpenParenthesisRegex,
-        CloseParenthesisRegex,
-        OpenBraceRegex,
-        CloseBraceRegex,
-        SemicolonRegex
+        IdentifierRegex, ConstantRegex, OpenParenthesisRegex,
+        CloseParenthesisRegex, OpenBraceRegex, CloseBraceRegex, SemicolonRegex
     ];
-
-    private static readonly string[] Keywords = ["int", "void", "return"];
 
     [GeneratedRegex(@"[a-zA-Z_]\w*\b")]
     private static partial Regex IdentifierRegex { get; }

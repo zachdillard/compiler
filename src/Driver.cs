@@ -1,14 +1,14 @@
-const string usage = "Usage: Compiler [-gcc] [-S] [--lex] <source-file>";
+const string usage = "Usage: Compiler [-gcc] [-S] [--lex|--parse|--codegen] <source-file>";
 
-if (args.Length < 1 || args.Length > 3)
+if (args.Length < 1 || args.Length > 4)
 {
   Console.Error.WriteLine(usage);
   return 1;
 }
 
 var assemblyOnly = false;
-var lexOnly = false;
 var useGcc = false;
+CompilationStage? stage = null;
 string? inputFile = null;
 
 foreach (var argument in args)
@@ -18,8 +18,14 @@ foreach (var argument in args)
     case "-S" when !assemblyOnly:
       assemblyOnly = true;
       break;
-    case "--lex" when !lexOnly:
-      lexOnly = true;
+    case "--lex" when stage is null:
+      stage = CompilationStage.Lex;
+      break;
+    case "--parse" when stage is null:
+      stage = CompilationStage.Parse;
+      break;
+    case "--codegen" when stage is null:
+      stage = CompilationStage.Codegen;
       break;
     case "-gcc" when !useGcc:
       useGcc = true;
@@ -55,9 +61,9 @@ if (preprocessingExitCode != 0)
 try
 {
   var compiler = new Compiler();
-  var compilerExitCode = useGcc && !lexOnly
+  var compilerExitCode = useGcc && stage is null
     ? compiler.Compile(preprocessedFile, assemblyFile)
-    : compiler.Run(preprocessedFile);
+    : compiler.Run(preprocessedFile, assemblyFile, stage ?? CompilationStage.Emit);
   if (compilerExitCode != 0)
   {
     return compilerExitCode;
@@ -74,7 +80,7 @@ catch (UnauthorizedAccessException)
   return 1;
 }
 
-if (lexOnly || assemblyOnly)
+if (stage is not null || assemblyOnly)
 {
   return 0;
 }

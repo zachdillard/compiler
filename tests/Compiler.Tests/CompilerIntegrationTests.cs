@@ -11,7 +11,7 @@ public sealed class CompilerIntegrationTests
     var result = RunCompiler();
 
     Assert.Equal(1, result.ExitCode);
-    Assert.Contains("Usage: Compiler [-gcc] [-S] [--lex] <source-file>", result.StandardError);
+    Assert.Contains("Usage: Compiler [-gcc] [-S] [--lex|--parse|--codegen] <source-file>", result.StandardError);
   }
 
   [Theory]
@@ -23,7 +23,7 @@ public sealed class CompilerIntegrationTests
     var result = RunCompiler(argument);
 
     Assert.Equal(1, result.ExitCode);
-    Assert.Contains("Usage: Compiler [-gcc] [-S] [--lex] <source-file>", result.StandardError);
+    Assert.Contains("Usage: Compiler [-gcc] [-S] [--lex|--parse|--codegen] <source-file>", result.StandardError);
   }
 
   [Fact]
@@ -78,14 +78,71 @@ public sealed class CompilerIntegrationTests
   }
 
   [Fact]
-  public void DefaultCompilationUsesCustomCompilerAndCleansPreprocessedFile()
+  public void DefaultCompilationUsesCustomCompilerAndCleansIntermediates()
   {
     using var fixture = new TestFixture("int main(void) { return 7; }");
 
     var result = RunCompiler(fixture.SourcePath);
 
-    Assert.Equal(1, result.ExitCode);
+    Assert.Equal(0, result.ExitCode);
     Assert.False(File.Exists(fixture.PreprocessedPath));
+    Assert.False(File.Exists(fixture.AssemblyPath));
+    Assert.True(File.Exists(fixture.ExecutablePath));
+
+    using var executable = Process.Start(fixture.ExecutablePath);
+    Assert.NotNull(executable);
+    executable.WaitForExit();
+    Assert.Equal(7, executable.ExitCode);
+  }
+
+  [Theory]
+  [InlineData("--lex")]
+  [InlineData("--parse")]
+  [InlineData("--codegen")]
+  public void IntermediateStagesCreateNoOutput(string stage)
+  {
+    using var fixture = new TestFixture("int main(void) { return 7; }");
+
+    var result = RunCompiler(stage, fixture.SourcePath);
+
+    Assert.Equal(0, result.ExitCode);
+    if (stage == "--lex")
+      Assert.Contains("keyword: int", result.StandardOutput);
+    else
+      Assert.Equal(string.Empty, result.StandardOutput);
+    Assert.False(File.Exists(fixture.PreprocessedPath));
+    Assert.False(File.Exists(fixture.AssemblyPath));
+    Assert.False(File.Exists(fixture.ExecutablePath));
+  }
+
+  [Fact]
+  public void CustomAssemblySupportsLargeConstants()
+  {
+    using var fixture = new TestFixture("int main(void) { return 123456789; }");
+
+    var result = RunCompiler("-S", fixture.SourcePath);
+
+    Assert.Equal(0, result.ExitCode);
+    Assert.True(File.Exists(fixture.AssemblyPath));
+    Assert.False(File.Exists(fixture.PreprocessedPath));
+    Assert.False(File.Exists(fixture.ExecutablePath));
+    Assert.Contains("1883", File.ReadAllText(fixture.AssemblyPath));
+  }
+
+  [Theory]
+  [InlineData("int main(void) { return 0@1; }")]
+  [InlineData("int main(void) { return 0; } foo")]
+  [InlineData("int main(void) { return 2147483648; }")]
+  public void InvalidCustomSourceFailsWithoutOutput(string source)
+  {
+    using var fixture = new TestFixture(source);
+
+    var result = RunCompiler(fixture.SourcePath);
+
+    Assert.Equal(1, result.ExitCode);
+    Assert.Contains("Error:", result.StandardError);
+    Assert.False(File.Exists(fixture.PreprocessedPath));
+    Assert.False(File.Exists(fixture.AssemblyPath));
     Assert.False(File.Exists(fixture.ExecutablePath));
   }
 
@@ -97,7 +154,7 @@ public sealed class CompilerIntegrationTests
     var result = RunCompiler("-gcc", "-gcc", fixture.SourcePath);
 
     Assert.Equal(1, result.ExitCode);
-    Assert.Contains("Usage: Compiler [-gcc] [-S] [--lex] <source-file>", result.StandardError);
+    Assert.Contains("Usage: Compiler [-gcc] [-S] [--lex|--parse|--codegen] <source-file>", result.StandardError);
   }
 
   [Fact]

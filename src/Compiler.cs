@@ -1,6 +1,8 @@
 using System.ComponentModel;
 using System.Diagnostics;
 
+public enum CompilationStage { Lex, Parse, Codegen, Emit }
+
 public class Compiler
 {
   public int Compile(string preprocessedFile, string assemblyFile)
@@ -48,12 +50,38 @@ public class Compiler
     }
   }
 
-  public int Run(string preprocessedFile)
+  public int Run(string preprocessedFile, string assemblyFile, CompilationStage stage)
   {
     try
     {
-      Lexer.Run(File.ReadAllText(preprocessedFile));
+      string input = File.ReadAllText(preprocessedFile);
+      if (stage == CompilationStage.Lex)
+      {
+        Lexer.Run(input);
+        return 0;
+      }
+
+      List<Token> tokens = Lexer.Tokenize(input);
+      C.Program program = new Parser().Parse(tokens);
+      if (stage == CompilationStage.Parse)
+        return 0;
+
+      Assembly.Program assembly = new Generator().Generate(program);
+      if (stage == CompilationStage.Codegen)
+        return 0;
+
+      File.WriteAllText(assemblyFile, new Emitter().Emit(assembly));
       return 0;
+    }
+    catch (InvalidOperationException exception)
+    {
+      Console.Error.WriteLine($"Error: {exception.Message}");
+      return 1;
+    }
+    catch (PlatformNotSupportedException exception)
+    {
+      Console.Error.WriteLine($"Error: {exception.Message}");
+      return 1;
     }
     finally
     {

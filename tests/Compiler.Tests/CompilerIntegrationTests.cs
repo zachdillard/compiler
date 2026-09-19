@@ -11,7 +11,7 @@ public sealed class CompilerIntegrationTests
     var result = RunCompiler();
 
     Assert.Equal(1, result.ExitCode);
-    Assert.Contains("Usage: Compiler [-gcc] [-S] [--lex] <source-file>", result.StandardError);
+    Assert.Contains("Usage: Compiler [-gcc] [-S] [--lex] [--parse] [--codegen] <source-file>", result.StandardError);
   }
 
   [Theory]
@@ -23,7 +23,7 @@ public sealed class CompilerIntegrationTests
     var result = RunCompiler(argument);
 
     Assert.Equal(1, result.ExitCode);
-    Assert.Contains("Usage: Compiler [-gcc] [-S] [--lex] <source-file>", result.StandardError);
+    Assert.Contains("Usage: Compiler [-gcc] [-S] [--lex] [--parse] [--codegen] <source-file>", result.StandardError);
   }
 
   [Fact]
@@ -78,14 +78,95 @@ public sealed class CompilerIntegrationTests
   }
 
   [Fact]
-  public void DefaultCompilationUsesCustomCompilerAndCleansPreprocessedFile()
+  public void DefaultCompilationUsesCustomCompilerAndProducesRunnableExecutable()
   {
     using var fixture = new TestFixture("int main(void) { return 7; }");
 
     var result = RunCompiler(fixture.SourcePath);
 
-    Assert.Equal(1, result.ExitCode);
+    Assert.Equal(0, result.ExitCode);
+    Assert.True(File.Exists(fixture.ExecutablePath));
     Assert.False(File.Exists(fixture.PreprocessedPath));
+    Assert.False(File.Exists(fixture.AssemblyPath));
+
+    var executableResult = Process.Start(new ProcessStartInfo
+    {
+      FileName = fixture.ExecutablePath,
+      UseShellExecute = false,
+      RedirectStandardOutput = true,
+      RedirectStandardError = true,
+      CreateNoWindow = true
+    });
+
+    Assert.NotNull(executableResult);
+    executableResult.WaitForExit();
+    Assert.Equal(7, executableResult.ExitCode);
+  }
+
+  [Fact]
+  public void LexOnlyPrintsTokensWithoutProducingOutput()
+  {
+    using var fixture = new TestFixture("int main(void) { return 7; }");
+
+    var result = RunCompiler("--lex", fixture.SourcePath);
+
+    Assert.Equal(0, result.ExitCode);
+    Assert.Contains("keyword: int", result.StandardOutput);
+    Assert.Contains("identifier: main", result.StandardOutput);
+    Assert.Contains("constant: 7", result.StandardOutput);
+    Assert.False(File.Exists(fixture.PreprocessedPath));
+    Assert.False(File.Exists(fixture.AssemblyPath));
+    Assert.False(File.Exists(fixture.ExecutablePath));
+  }
+
+  [Theory]
+  [InlineData("--parse")]
+  [InlineData("--codegen")]
+  public void IntermediateStagesSucceedWithoutProducingOutput(string stage)
+  {
+    using var fixture = new TestFixture("int main(void) { return 7; }");
+
+    var result = RunCompiler(stage, fixture.SourcePath);
+
+    Assert.Equal(0, result.ExitCode);
+    Assert.False(File.Exists(fixture.PreprocessedPath));
+    Assert.False(File.Exists(fixture.AssemblyPath));
+    Assert.False(File.Exists(fixture.ExecutablePath));
+  }
+
+  [Fact]
+  public void AssemblyOnlyCustomCompilationEmitsX86Assembly()
+  {
+    using var fixture = new TestFixture("int main(void) { return 7; }");
+
+    var result = RunCompiler("-S", fixture.SourcePath);
+
+    Assert.Equal(0, result.ExitCode);
+    Assert.True(File.Exists(fixture.AssemblyPath));
+    Assert.False(File.Exists(fixture.ExecutablePath));
+    Assert.False(File.Exists(fixture.PreprocessedPath));
+
+    var assembly = File.ReadAllText(fixture.AssemblyPath);
+    Assert.Contains(".globl _main", assembly);
+    Assert.Contains("_main:", assembly);
+    Assert.Contains("movl $7, %eax", assembly);
+    Assert.Contains("ret", assembly);
+  }
+
+  [Theory]
+  [InlineData("int main(void) { return 1foo; }")]
+  [InlineData("int main(void) { return 7 }")]
+  [InlineData("int main(void) { return 7; } foo")]
+  public void InvalidProgramsFailWithoutProducingOutput(string source)
+  {
+    using var fixture = new TestFixture(source);
+
+    var result = RunCompiler(fixture.SourcePath);
+
+    Assert.NotEqual(0, result.ExitCode);
+    Assert.Contains("Error", result.StandardError, StringComparison.OrdinalIgnoreCase);
+    Assert.False(File.Exists(fixture.PreprocessedPath));
+    Assert.False(File.Exists(fixture.AssemblyPath));
     Assert.False(File.Exists(fixture.ExecutablePath));
   }
 
@@ -97,7 +178,7 @@ public sealed class CompilerIntegrationTests
     var result = RunCompiler("-gcc", "-gcc", fixture.SourcePath);
 
     Assert.Equal(1, result.ExitCode);
-    Assert.Contains("Usage: Compiler [-gcc] [-S] [--lex] <source-file>", result.StandardError);
+    Assert.Contains("Usage: Compiler [-gcc] [-S] [--lex] [--parse] [--codegen] <source-file>", result.StandardError);
   }
 
   [Fact]

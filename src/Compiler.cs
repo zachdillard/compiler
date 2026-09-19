@@ -1,6 +1,14 @@
 using System.ComponentModel;
 using System.Diagnostics;
 
+public enum Stage
+{
+  Lex,
+  Parse,
+  Codegen,
+  Assembly
+}
+
 public class Compiler
 {
   public int Compile(string preprocessedFile, string assemblyFile)
@@ -13,6 +21,8 @@ public class Compiler
       CreateNoWindow = true,
       ArgumentList =
       {
+        "-arch",
+        "x86_64",
         "-S",
         preprocessedFile,
         "-o",
@@ -48,11 +58,34 @@ public class Compiler
     }
   }
 
-  public int Run(string preprocessedFile)
+  public int Run(string preprocessedFile, string assemblyFile, Stage stage)
   {
     try
     {
-      Lexer.Run(File.ReadAllText(preprocessedFile));
+      var tokens = Lexer.Run(File.ReadAllText(preprocessedFile));
+      if (stage == Stage.Lex)
+      {
+        foreach (var token in tokens)
+        {
+          Console.WriteLine(Lexer.Describe(token));
+        }
+
+        return 0;
+      }
+
+      var ast = Parser.Run(tokens);
+      if (stage == Stage.Parse)
+      {
+        return 0;
+      }
+
+      var assembly = Generator.Run(ast);
+      if (stage == Stage.Codegen)
+      {
+        return 0;
+      }
+
+      File.WriteAllText(assemblyFile, Emitter.Run(assembly));
       return 0;
     }
     finally

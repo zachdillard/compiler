@@ -13,6 +13,8 @@ public class Assembler
       CreateNoWindow = true,
       ArgumentList =
       {
+        "-arch",
+        "x86_64",
         assemblyFile,
         "-o",
         outputFile

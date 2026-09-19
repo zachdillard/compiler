@@ -5,7 +5,7 @@
 - The .NET 11 RC1 SDK and GCC on `PATH` are required.
 - Keep changes simple, clear, and easy to understand.
 - Keep commit messages simple unless additional detail is required.
-- The project and solution files live in the `Compiler` folder alongside the compiler sources. From the repository root, use `dotnet build Compiler/Compiler.slnx` to build and `dotnet test Compiler/Compiler.slnx` to run integration tests. Tests require GCC on `PATH`.
+- The solution file is at the repository root; the compiler sources and tests live in `Compiler/` and `Compiler.Tests/`. From the repository root, use `dotnet build` to build and `dotnet test` to run integration tests. Tests require GCC on `PATH`.
 - Run the book's chapter tests with `./tests/run_book_tests.sh --chapter <number>`. The script forwards options to the book's `test_compiler` runner; use `BOOK_TESTS_DIR` when the test checkout is elsewhere.
 - The compiler accepts one C source path: `dotnet run --project Compiler -- <source-file>`. This selects the custom compiler implementation, which lexes, parses, generates assembly, emits it, and then assembles and links an executable beside the input.
 - The custom compiler emits x86-64 assembly in AT&T syntax with macOS symbol conventions. GCC is invoked with `-arch x86_64`, so executables run under Rosetta 2 on Apple silicon.

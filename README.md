@@ -11,11 +11,10 @@ The implementation follows the book's progression from parsing C source through 
 
 ## Usage
 
-Build the compiler from the repository root. The project and solution live in
-the `Compiler` folder:
+Build the compiler from the repository root:
 
 ```sh
-dotnet build Compiler/Compiler.slnx
+dotnet build
 ```
 
 Compile a C source file with the custom compiler by passing its path as the only
@@ -107,7 +106,7 @@ repository for additional test runner usage.
 Run the integration tests from the repository root:
 
 ```sh
-dotnet test Compiler/Compiler.slnx
+dotnet test
 ```
 
 The tests require GCC to be available on `PATH`.

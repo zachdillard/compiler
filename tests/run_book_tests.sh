@@ -4,7 +4,7 @@ set -eu
 
 project_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 book_tests_dir=${BOOK_TESTS_DIR:-/Users/zach/Projects/nlsandler/writing-a-c-compiler-tests}
-compiler="$project_dir/bin/Debug/net11.0/Compiler"
+compiler="$project_dir/Compiler/bin/Debug/net11.0/Compiler"
 runner="$book_tests_dir/test_compiler"
 
 if ! command -v python3 >/dev/null 2>&1; then
@@ -18,7 +18,7 @@ if [ ! -x "$runner" ]; then
   exit 1
 fi
 
-dotnet build "$project_dir/Compiler.csproj" --no-restore
+dotnet build "$project_dir/Compiler/Compiler.csproj" --no-restore
 
 if [ ! -x "$compiler" ]; then
   printf '%s\n' "Error: compiler executable was not produced: $compiler" >&2

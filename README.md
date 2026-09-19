@@ -11,17 +11,18 @@ The implementation follows the book's progression from parsing C source through 
 
 ## Usage
 
-Build the compiler from the repository root:
+Build the compiler from the repository root. The project and solution live in
+the `Compiler` folder:
 
 ```sh
-dotnet build
+dotnet build Compiler/Compiler.slnx
 ```
 
 Compile a C source file with the custom compiler by passing its path as the only
 argument:
 
 ```sh
-dotnet run -- data/return_2.c
+dotnet run --project Compiler -- data/return_2.c
 ```
 
 This runs the full pipeline: preprocessing, lexing, parsing, assembly
@@ -36,9 +37,9 @@ with `-arch x86_64` and the resulting executables run under Rosetta 2.
 To stop after an intermediate stage, pass `--lex`, `--parse`, or `--codegen`:
 
 ```sh
-dotnet run -- --lex data/return_2.c
-dotnet run -- --parse data/return_2.c
-dotnet run -- --codegen data/return_2.c
+dotnet run --project Compiler -- --lex data/return_2.c
+dotnet run --project Compiler -- --parse data/return_2.c
+dotnet run --project Compiler -- --codegen data/return_2.c
 ```
 
 Lex-only mode prints the recognized tokens. None of these stages create
@@ -48,13 +49,13 @@ prints a diagnostic and exits with a nonzero status.
 To test a specific file from the book's test suite, pass its path directly:
 
 ```sh
-dotnet run -- --lex /path/to/writing-a-c-compiler-tests/tests/chapter_1/valid/return_2.c
+dotnet run --project Compiler -- --lex /path/to/writing-a-c-compiler-tests/tests/chapter_1/valid/return_2.c
 ```
 
 To generate assembly without linking an executable, use `-S`:
 
 ```sh
-dotnet run -- -S data/return_2.c
+dotnet run --project Compiler -- -S data/return_2.c
 ```
 
 This creates `data/return_2.s`:
@@ -69,7 +70,7 @@ _main:
 To use the temporary GCC-backed compiler, pass `-gcc`:
 
 ```sh
-dotnet run -- -gcc data/return_2.c
+dotnet run --project Compiler -- -gcc data/return_2.c
 ```
 
 GCC preprocessing, assembly generation, and linking create an executable beside
@@ -77,8 +78,8 @@ the input file. To generate assembly with GCC, combine `-S` and `-gcc` in either
 order:
 
 ```sh
-dotnet run -- -gcc -S data/return_2.c
-dotnet run -- -S -gcc data/return_2.c
+dotnet run --project Compiler -- -gcc -S data/return_2.c
+dotnet run --project Compiler -- -S -gcc data/return_2.c
 ```
 
 You can run the generated executable with:
@@ -106,7 +107,7 @@ repository for additional test runner usage.
 Run the integration tests from the repository root:
 
 ```sh
-dotnet test
+dotnet test Compiler/Compiler.slnx
 ```
 
 The tests require GCC to be available on `PATH`.

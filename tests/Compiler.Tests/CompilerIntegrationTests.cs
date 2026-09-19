@@ -219,7 +219,7 @@ public sealed class CompilerIntegrationTests
 
   private static ProcessResult RunCompiler(params string[] arguments)
   {
-    var compilerProjectDirectory = FindRepositoryRoot();
+    var compilerProjectDirectory = FindCompilerProjectDirectory();
     var compilerAssembly = Path.Combine(compilerProjectDirectory, "bin", "Debug", "net11.0", "Compiler.dll");
 
     Assert.True(File.Exists(compilerAssembly), $"Build the compiler before running integration tests: {compilerAssembly}");
@@ -248,16 +248,17 @@ public sealed class CompilerIntegrationTests
     return new ProcessResult(process.ExitCode, standardOutput, standardError);
   }
 
-  private static string FindRepositoryRoot()
+  private static string FindCompilerProjectDirectory()
   {
     var directory = new DirectoryInfo(AppContext.BaseDirectory);
-    while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "Compiler.csproj")))
+    while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "Compiler", "Compiler.csproj")))
     {
       directory = directory.Parent;
     }
 
-    return directory?.FullName
-      ?? throw new DirectoryNotFoundException("Could not find the compiler project root.");
+    return directory is null
+      ? throw new DirectoryNotFoundException("Could not find the compiler project directory.")
+      : Path.Combine(directory.FullName, "Compiler");
   }
 
   private sealed record ProcessResult(int ExitCode, string StandardOutput, string StandardError);

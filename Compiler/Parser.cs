@@ -1,3 +1,7 @@
+using C = Compiler.Syntax.C;
+
+namespace Compiler;
+
 class Parser
 {
     public static C.Program Run(List<Token> tokens)

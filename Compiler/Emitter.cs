@@ -1,4 +1,7 @@
 using System.Text;
+using Assembly = Compiler.Syntax.Assembly;
+
+namespace Compiler;
 
 class Emitter
 {

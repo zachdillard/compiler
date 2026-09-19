@@ -1,3 +1,5 @@
+using Compiler;
+
 const string usage = "Usage: Compiler [-gcc] [-S] [--lex] [--parse] [--codegen] <source-file>";
 
 if (args.Length < 1)
@@ -60,7 +62,7 @@ if (preprocessingExitCode != 0)
 
 try
 {
-  var compiler = new Compiler();
+  var compiler = new global::Compiler.Compiler();
   var compilerExitCode = useGcc && stage is null
     ? compiler.Compile(preprocessedFile, assemblyFile)
     : compiler.Run(preprocessedFile, assemblyFile, stage ?? Stage.Assembly);

@@ -1,3 +1,5 @@
+namespace Compiler;
+
 readonly union Token
 (
     Identifier,

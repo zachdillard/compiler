@@ -1,5 +1,7 @@
 using System.Text.RegularExpressions;
 
+namespace Compiler;
+
 partial class Lexer
 {
     public static List<Token> Run(string input)

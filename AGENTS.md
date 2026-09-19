@@ -13,5 +13,6 @@
 - Use `dotnet run --project Compiler -- -gcc <source-file>` to select the temporary GCC-backed compiler. GCC preprocessing, assembly generation, and linking produce an executable beside the input; intermediate `.i` and `.s` files are removed after successful stages.
 - Use `dotnet run --project Compiler -- -S <source-file>` for custom assembly-only mode, or combine `-S` and `-gcc` in either order (`dotnet run --project Compiler -- -gcc -S <source-file>`) for GCC assembly output without linking. The intermediate `.i` file is removed.
 - Compiler stages live in `Compiler/` and follow the style of `concepts/compiler.cs`: four-space indentation, explicit types, and `union`/`record` declarations.
+- Source files use file-scoped namespaces. Stages are in the `Compiler` namespace; the C and assembly syntax trees are in `Compiler/Syntax/` under `Compiler.Syntax.C` and `Compiler.Syntax.Assembly`, aliased to `C` and `Assembly` where they are used. `Driver.cs` holds top-level statements, so it cannot declare a namespace.
 - The `concepts/` folder contains self-contained, file-based C# examples. From that folder, run an example individually with `dotnet <concept-name>.cs`.
 - When adding a new C source file under `data/`, add its generated output file to `.gitignore`.

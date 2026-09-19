@@ -1,6 +1,8 @@
 using System.ComponentModel;
 using System.Diagnostics;
 
+namespace Compiler;
+
 public class Assembler
 {
   public int Run(string assemblyFile, string outputFile)

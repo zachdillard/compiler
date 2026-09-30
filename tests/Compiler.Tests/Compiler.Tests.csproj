@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../Compiler.csproj" />
+    <ProjectReference Include="../../src/Compiler.csproj" />
   </ItemGroup>
 
 </Project>

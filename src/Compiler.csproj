@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -7,12 +7,5 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Remove="concepts/**/*.cs" />
-    <Compile Remove="tests/**/*.cs" />
-    <None Include="concepts/**/*.cs" />
-    <None Include="tests/**/*.cs" />
-  </ItemGroup>
 
 </Project>

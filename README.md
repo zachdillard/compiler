@@ -20,7 +20,7 @@ dotnet build
 Compile a C source file with the custom compiler by passing its path as the only argument:
 
 ```sh
-dotnet run -- data/return_2.c
+dotnet run --project src/Compiler.csproj -- data/return_2.c
 ```
 
 The custom compiler currently implements lexing, but later stages are still
@@ -28,7 +28,7 @@ under development. To stop after lexing and print the recognized tokens, pass
 `--lex`:
 
 ```sh
-dotnet run -- --lex data/return_2.c
+dotnet run --project src/Compiler.csproj -- --lex data/return_2.c
 ```
 
 A lexically valid file exits with status `0`; an invalid token produces a
@@ -37,13 +37,13 @@ nonzero exit status. Lex-only mode does not create assembly or an executable.
 To test a specific file from the book's test suite, pass its path directly:
 
 ```sh
-dotnet run -- --lex /path/to/writing-a-c-compiler-tests/tests/chapter_1/valid/return_2.c
+dotnet run --project src/Compiler.csproj -- --lex /path/to/writing-a-c-compiler-tests/tests/chapter_1/valid/return_2.c
 ```
 
 To use the temporary GCC-backed compiler, pass `-gcc`:
 
 ```sh
-dotnet run -- -gcc data/return_2.c
+dotnet run --project src/Compiler.csproj -- -gcc data/return_2.c
 ```
 
 GCC preprocessing, assembly generation, and linking create an executable
@@ -53,15 +53,15 @@ Intermediate `.i` and `.s` files are removed after each successful stage.
 To generate assembly without linking an executable, use `-S`:
 
 ```sh
-dotnet run -- -S data/return_2.c
+dotnet run --project src/Compiler.csproj -- -S data/return_2.c
 ```
 
 This selects the custom compiler's assembly-only mode. To generate assembly
 with GCC, combine `-S` and `-gcc` in either order:
 
 ```sh
-dotnet run -- -gcc -S data/return_2.c
-dotnet run -- -S -gcc data/return_2.c
+dotnet run --project src/Compiler.csproj -- -gcc -S data/return_2.c
+dotnet run --project src/Compiler.csproj -- -S -gcc data/return_2.c
 ```
 
 These commands create `data/return_2.s` and remove the intermediate `.i` file.

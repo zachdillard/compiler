@@ -48,12 +48,24 @@ public class Compiler
     }
   }
 
-  public int Run(string preprocessedFile)
+  public int Run(string preprocessedFile, string assemblyFile, bool lexOnly = false)
   {
     try
     {
-      Lexer.Run(File.ReadAllText(preprocessedFile));
+      List<Token> tokens = Lexer.Run(File.ReadAllText(preprocessedFile));
+      if (lexOnly)
+        return 0;
+
+      C.Program program = Parser.Run(tokens);
+      Assembly.Program assembly = Generator.Run(program);
+      string output = Emitter.Run(assembly);
+      Writer.Run(output, assemblyFile);
       return 0;
+    }
+    catch (InvalidOperationException exception)
+    {
+      Console.Error.WriteLine($"Error: {exception.Message}");
+      return 1;
     }
     finally
     {

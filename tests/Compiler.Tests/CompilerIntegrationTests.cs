@@ -27,6 +27,20 @@ public sealed class CompilerIntegrationTests
   }
 
   [Fact]
+  public void LexOnlyProducesNoOutputAndRemovesPreprocessedFile()
+  {
+    using var fixture = new TestFixture("int main(void) {\n\treturn 7;\n}\n");
+
+    var result = RunCompiler("--lex", fixture.SourcePath);
+
+    Assert.Equal(0, result.ExitCode);
+    Assert.Empty(result.StandardOutput);
+    Assert.False(File.Exists(fixture.PreprocessedPath));
+    Assert.False(File.Exists(fixture.AssemblyPath));
+    Assert.False(File.Exists(fixture.ExecutablePath));
+  }
+
+  [Fact]
   public void AssemblyOnlyCompilationCreatesAssemblyWithoutExecutable()
   {
     using var fixture = new TestFixture("int main(void) { return 7; }");
@@ -51,12 +65,14 @@ public sealed class CompilerIntegrationTests
     Assert.False(File.Exists(fixture.PreprocessedPath));
   }
 
-  [Fact]
-  public void NormalCompilationProducesExecutableAndRemovesIntermediateFiles()
+  [Theory]
+  [InlineData(false)]
+  [InlineData(true)]
+  public void NormalCompilationProducesExecutableAndRemovesIntermediateFiles(bool useGcc)
   {
     using var fixture = new TestFixture("int main(void) { return 7; }");
 
-    var result = RunCompiler("-gcc", fixture.SourcePath);
+    var result = useGcc ? RunCompiler("-gcc", fixture.SourcePath) : RunCompiler(fixture.SourcePath);
 
     Assert.Equal(0, result.ExitCode);
     Assert.True(File.Exists(fixture.ExecutablePath));
@@ -78,15 +94,43 @@ public sealed class CompilerIntegrationTests
   }
 
   [Fact]
-  public void DefaultCompilationUsesCustomCompilerAndCleansPreprocessedFile()
+  public void CustomAssemblyOnlyCompilationWritesAssemblyAndCleansPreprocessedFile()
   {
     using var fixture = new TestFixture("int main(void) { return 7; }");
+
+    var result = RunCompiler("-S", fixture.SourcePath);
+
+    Assert.Equal(0, result.ExitCode);
+    Assert.Empty(result.StandardOutput);
+    Assert.False(File.Exists(fixture.PreprocessedPath));
+    Assert.Equal("\t.globl _main\n_main:\n\tmovl $7, %eax\n\tret\n".Replace("\n", Environment.NewLine),
+      File.ReadAllText(fixture.AssemblyPath));
+    Assert.False(File.Exists(fixture.ExecutablePath));
+  }
+
+  [Fact]
+  public void CustomParserRejectsInvalidSyntaxAndCleansPreprocessedFile()
+  {
+    using var fixture = new TestFixture("int main(void) { return 7 }");
 
     var result = RunCompiler(fixture.SourcePath);
 
     Assert.Equal(1, result.ExitCode);
+    Assert.Contains("Expected Semicolon", result.StandardError);
     Assert.False(File.Exists(fixture.PreprocessedPath));
     Assert.False(File.Exists(fixture.ExecutablePath));
+  }
+
+  [Fact]
+  public void LexOnlyStopsBeforeParsing()
+  {
+    using var fixture = new TestFixture("int main(void) { return 7 }");
+
+    var result = RunCompiler("--lex", fixture.SourcePath);
+
+    Assert.Equal(0, result.ExitCode);
+    Assert.Empty(result.StandardError);
+    Assert.False(File.Exists(fixture.PreprocessedPath));
   }
 
   [Fact]

@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 public class Assembler
 {
-  public int Run(string assemblyFile, string outputFile)
+  public int Run(string assemblyFile, string outputFile, bool x86_64 = false)
   {
     var startInfo = new ProcessStartInfo
     {
@@ -18,6 +18,13 @@ public class Assembler
         outputFile
       }
     };
+
+    // The custom emitter follows the book's x86-64 target, including on Apple Silicon.
+    if (x86_64 && OperatingSystem.IsMacOS())
+    {
+      startInfo.ArgumentList.Insert(0, "-arch");
+      startInfo.ArgumentList.Insert(1, "x86_64");
+    }
 
     try
     {

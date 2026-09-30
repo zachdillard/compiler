@@ -57,7 +57,7 @@ try
   var compiler = new Compiler();
   var compilerExitCode = useGcc && !lexOnly
     ? compiler.Compile(preprocessedFile, assemblyFile)
-    : compiler.Run(preprocessedFile);
+    : compiler.Run(preprocessedFile, assemblyFile, lexOnly);
   if (compilerExitCode != 0)
   {
     return compilerExitCode;
@@ -79,4 +79,4 @@ if (lexOnly || assemblyOnly)
   return 0;
 }
 
-return new Assembler().Run(assemblyFile, outputFile);
+return new Assembler().Run(assemblyFile, outputFile, x86_64: !useGcc);

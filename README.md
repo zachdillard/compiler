@@ -116,3 +116,11 @@ dotnet basic-regex-lexer.cs
 > [!WARNING]
 > This project is under development. Additional compiler stages and language
 > features will be added as the implementation progresses through the book.
+
+The project is currently working toward `v0.1.0` (Chapter 1). Each release
+completes one chapter of the book:
+
+- [Release roadmap](docs/roadmap.md): the per-chapter releases, from `v0.1.0`
+  to `v0.20.0`.
+- [Release requirements](docs/release-requirements.md): what must be done
+  before the `v1.0.0` production release.

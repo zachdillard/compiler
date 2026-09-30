@@ -10,11 +10,11 @@
       "cwd": "${workspaceFolder}"
     },
     {
-      "name": "Debug preview-parser.cs",
+      "name": "Debug compiler.cs",
       "type": "coreclr",
       "request": "launch",
-      "preLaunchTask": "Build preview-parser.cs",
-      "program": "${workspaceFolder}/obj/preview-parser-debug/preview-parser.dll",
+      "preLaunchTask": "Build compiler.cs",
+      "program": "${workspaceFolder}/obj/compiler-debug/compiler.dll",
       "cwd": "${workspaceFolder}"
     }
   ]

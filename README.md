@@ -10,10 +10,56 @@ The implementation follows the book's progression from parsing C source through 
 
 ## Requirements
 
-- .NET 11 RC1 SDK
-- GCC available on `PATH`
+- .NET 11 RC1 SDK **11.0.100-rc.1.26425.128**, as specified in `global.json`
+- GCC available on `PATH` (Apple's Clang-backed `gcc` is suitable)
 - For the custom compiler: macOS with x86-64 assembly/linking support. Running
   its executables on Apple Silicon requires Rosetta 2.
+
+Install the SDK from the [official .NET 11 download page](https://dotnet.microsoft.com/en-us/download/dotnet/11.0),
+selecting the RC1 SDK version above: Arm64 for Apple Silicon or x64 for Intel
+Macs. The repository uses preview C# features and limited SDK roll-forward;
+installing only a newer SDK may not satisfy `global.json`.
+
+Install Apple's Command Line Tools if you do not already have them:
+
+```sh
+xcode-select --install
+```
+
+On Apple Silicon, install Rosetta 2 if needed to execute the custom compiler's
+x86-64 output:
+
+```sh
+softwareupdate --install-rosetta
+```
+
+Check the prerequisites before building:
+
+```sh
+dotnet --version
+gcc --version
+xcode-select -p
+```
+
+Run `dotnet --version` inside the checkout so it uses `global.json`. The first
+project build or test run needs access to NuGet to restore test dependencies.
+
+## Quick start
+
+With Git and the prerequisites installed:
+
+```sh
+git clone https://github.com/zachdillard/compiler.git
+cd compiler
+dotnet build
+dotnet run --project src/Compiler.csproj -- data/return_2.c
+./data/return_2
+echo $?
+dotnet test
+```
+
+The generated program prints nothing and exits with status `2`, which
+`echo $?` displays. This is the expected result, not a compilation failure.
 
 ## Implementation
 
@@ -111,9 +157,14 @@ echo $?
 The example exits with status `2` with either compiler. It prints nothing;
 `echo $?` displays the exit status.
 
-To run the book's chapter tests manually, use the test runner in `tests/`:
+## Optional book tests
+
+The book suite is a separate checkout and requires Git, Python 3.8 or newer,
+and the compiler prerequisites above. From the compiler repository root:
 
 ```sh
+git clone https://github.com/nlsandler/writing-a-c-compiler-tests.git \
+  ../writing-a-c-compiler-tests
 ./tests/run_book_tests.sh --chapter 1
 ```
 
@@ -124,10 +175,20 @@ valid programs and invalid lexing/parsing cases. To test only lexing, use:
 ./tests/run_book_tests.sh --chapter 1 --stage lex
 ```
 
-The script forwards options to the book's `test_compiler` runner.
-Set `BOOK_TESTS_DIR` if the test checkout is in a different location. See the
+The script builds the compiler, restoring dependencies as needed, and forwards
+options to the book's `test_compiler` runner. It finds the sibling checkout
+regardless of your current directory. For an existing checkout elsewhere:
+
+```sh
+BOOK_TESTS_DIR="/path/to/writing-a-c-compiler-tests" \
+  ./tests/run_book_tests.sh --chapter 1
+```
+
+See the
 [`writing-a-c-compiler-tests`](https://github.com/nlsandler/writing-a-c-compiler-tests)
 repository for additional test runner usage.
+
+## Project tests
 
 Run the integration tests from the repository root:
 
@@ -153,5 +214,11 @@ dotnet <concept-name>.cs
 For example:
 
 ```sh
-dotnet basic-regex-lexer.cs
+dotnet lexer.cs
 ```
+
+The available examples are `lexer.cs`, `parser.cs`, and `compiler.cs`.
+
+VS Code includes `Debug parser.cs` and `Debug compiler.cs` configurations.
+Install the Microsoft C# extension to use them. Each configuration builds its
+example into `obj/` before launching it; paths are relative to the workspace.

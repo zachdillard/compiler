@@ -21,7 +21,10 @@ The custom compiler completes chapter one: a single `int` function with
 `void` parameters and one statement returning an integer constant, such as:
 
 ```c
-int main(void) { return 2; }
+int main(void)
+{
+    return 2;
+}
 ```
 
 The pipeline is:

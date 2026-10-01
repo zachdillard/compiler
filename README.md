@@ -73,7 +73,25 @@ int main(void)
 }
 ```
 
-The pipeline is:
+The default custom compiler pipeline is:
+
+```mermaid
+flowchart TD
+    source["C source (.c)"] --> preprocessor["Preprocessor (GCC)"]
+    preprocessor -->|"Preprocessed C (.i)"| lexer
+
+    subgraph custom["Custom compiler (C#)"]
+        lexer["Lexer"] -->|"Typed tokens"| parser["Parser"]
+        parser -->|"C AST"| generator["Generator"]
+        generator -->|"Assembly AST"| emitter["Emitter"]
+        emitter -->|"macOS x86-64 assembly text"| writer["Writer"]
+    end
+
+    writer -->|"Assembly file (.s)"| assembler["Assembler (GCC)<br/>Assemble and link"]
+    assembler --> executable["Executable"]
+```
+
+Each stage has one job:
 
 1. `Preprocessor` uses GCC to preprocess the C source.
 2. `Lexer` returns the typed tokens defined in `Tokens.cs`.

@@ -14,14 +14,14 @@
       "problemMatcher": "$msCompile"
     },
     {
-      "label": "Build preview-parser.cs",
+      "label": "Build compiler.cs",
       "type": "process",
       "command": "dotnet",
       "args": [
         "build",
-        "${workspaceFolder}/concepts/preview-parser.cs",
+        "${workspaceFolder}/concepts/compiler.cs",
         "--output",
-        "${workspaceFolder}/obj/preview-parser-debug"
+        "${workspaceFolder}/obj/compiler-debug"
       ],
       "problemMatcher": "$msCompile"
     }

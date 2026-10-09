@@ -151,9 +151,11 @@ valid programs and invalid lexing/parsing cases. To test only lexing, use:
 ./tests/run_book_tests.sh --chapter 1 --stage lex
 ```
 
-The script builds the compiler, restoring dependencies as needed, and forwards
-options to the book's `test_compiler` runner. It finds the sibling checkout
-regardless of your current directory. For an existing checkout elsewhere:
+Run the script from the compiler repository root so `dotnet` uses the SDK
+selection in `global.json`. It builds the compiler into `artifacts/book-tests/`,
+restoring dependencies as needed, then runs the book's `test_compiler` runner
+with your arguments. The generated build output is ignored by Git.
+For an existing checkout elsewhere:
 
 ```sh
 BOOK_TESTS_DIR="/path/to/writing-a-c-compiler-tests" \

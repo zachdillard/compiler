@@ -1,15 +1,15 @@
 public readonly union Token
 (
-    Identifier,
-    Int,
-    Void,
-    Return,
-    Constant,
-    OpenParenthesis,
-    CloseParenthesis,
-    OpenBrace,
-    CloseBrace,
-    Semicolon
+  Identifier,
+  Int,
+  Void,
+  Return,
+  Constant,
+  OpenParenthesis,
+  CloseParenthesis,
+  OpenBrace,
+  CloseBrace,
+  Semicolon
 );
 
 public record Identifier(string Value);

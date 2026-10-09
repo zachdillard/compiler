@@ -13,5 +13,6 @@ trim_trailing_whitespace = false
 indent_style = space
 indent_size = 2
 csharp_new_line_before_open_brace = all
+csharp_prefer_braces = when_multiline
 dotnet_style_namespace_match_folder = false
 dotnet_diagnostic.CA1050.severity = none

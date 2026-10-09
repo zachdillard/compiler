@@ -1,0 +1,42 @@
+name: Compiler Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: macos-15-intel
+    strategy:
+      matrix:
+        configuration: [Debug, Release]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+      - name: Check prerequisites
+        run: |
+          dotnet --version
+          gcc --version
+          python3 --version
+      - name: Restore
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --configuration ${{ matrix.configuration }} --no-restore -m:1 -p:UseSharedCompilation=false
+      - name: Test
+        run: dotnet test --configuration ${{ matrix.configuration }} --no-build --no-restore -m:1
+      - name: Check out book tests
+        uses: actions/checkout@v5
+        with:
+          repository: nlsandler/writing-a-c-compiler-tests
+          path: artifacts/writing-a-c-compiler-tests
+      - name: Book tests
+        env:
+          BOOK_TESTS_DIR: ${{ github.workspace }}/artifacts/writing-a-c-compiler-tests
+          BUILD_CONFIGURATION: ${{ matrix.configuration }}
+        run: ./tests/book_tests.sh --chapter 1

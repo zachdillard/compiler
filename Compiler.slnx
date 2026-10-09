@@ -1,4 +1,5 @@
 <Solution>
   <Project Path="src/Compiler.csproj" />
   <Project Path="tests/Compiler.Tests/Compiler.Tests.csproj" />
+  <Project Path="claude-tests/Compiler.ClaudeTests/Compiler.ClaudeTests.csproj" />
 </Solution>

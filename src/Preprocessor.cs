@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 public class Preprocessor
 {
-  public int Run(string inputFile, string preprocessedFile)
+  public static int Run(string inputFile, string preprocessedFile)
   {
     var startInfo = new ProcessStartInfo
     {

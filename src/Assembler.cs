@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 public class Assembler
 {
-  public int Run(string assemblyFile, string outputFile, bool x86_64 = false)
+  public static int Run(string assemblyFile, string outputFile, bool x86_64 = false)
   {
     var startInfo = new ProcessStartInfo
     {

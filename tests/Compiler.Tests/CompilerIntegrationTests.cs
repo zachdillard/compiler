@@ -182,8 +182,10 @@ public sealed class CompilerIntegrationTests
 
   private static ProcessResult RunCompiler(params string[] arguments)
   {
-    var compilerProjectDirectory = Path.Combine(FindRepositoryRoot(), "src");
-    var compilerAssembly = Path.Combine(compilerProjectDirectory, "bin", "Debug", "net11.0", "Compiler.dll");
+    var compilerAssembly = typeof(Lexer).Assembly.Location;
+    var testAssembly = typeof(CompilerIntegrationTests).Assembly.Location;
+    var runtimeConfiguration = Path.ChangeExtension(testAssembly, ".runtimeconfig.json");
+    var dependencies = Path.ChangeExtension(testAssembly, ".deps.json");
 
     Assert.True(File.Exists(compilerAssembly), $"Build the compiler before running integration tests: {compilerAssembly}");
 
@@ -195,11 +197,17 @@ public sealed class CompilerIntegrationTests
       RedirectStandardError = true,
       CreateNoWindow = true
     };
+    Assert.True(File.Exists(runtimeConfiguration), $"Missing test runtime configuration: {runtimeConfiguration}");
+    Assert.True(File.Exists(dependencies), $"Missing test dependency manifest: {dependencies}");
+
+    startInfo.ArgumentList.Add("exec");
+    startInfo.ArgumentList.Add("--runtimeconfig");
+    startInfo.ArgumentList.Add(runtimeConfiguration);
+    startInfo.ArgumentList.Add("--depsfile");
+    startInfo.ArgumentList.Add(dependencies);
     startInfo.ArgumentList.Add(compilerAssembly);
     foreach (var argument in arguments)
-    {
       startInfo.ArgumentList.Add(argument);
-    }
 
     using var process = Process.Start(startInfo);
     Assert.NotNull(process);
@@ -209,18 +217,6 @@ public sealed class CompilerIntegrationTests
     process.WaitForExit();
 
     return new ProcessResult(process.ExitCode, standardOutput, standardError);
-  }
-
-  private static string FindRepositoryRoot()
-  {
-    var directory = new DirectoryInfo(AppContext.BaseDirectory);
-    while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "Compiler.slnx")))
-    {
-      directory = directory.Parent;
-    }
-
-    return directory?.FullName
-      ?? throw new DirectoryNotFoundException("Could not find the repository root.");
   }
 
   private sealed record ProcessResult(int ExitCode, string StandardOutput, string StandardError);

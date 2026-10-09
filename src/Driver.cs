@@ -1,3 +1,6 @@
+using System.ComponentModel;
+using System.Diagnostics;
+
 const string usage = "Usage: Compiler [-gcc] [-S] [--lex] <source-file>";
 
 if (args.Length < 1 || args.Length > 3)
@@ -46,21 +49,67 @@ var preprocessedFile = Path.ChangeExtension(inputFile, ".i");
 var assemblyFile = Path.ChangeExtension(inputFile, ".s");
 var outputFile = Path.ChangeExtension(inputFile, null);
 
-var preprocessingExitCode = new Preprocessor().Run(inputFile, preprocessedFile);
+var preprocessingExitCode = Preprocessor.Run(inputFile, preprocessedFile);
 if (preprocessingExitCode != 0)
-{
   return preprocessingExitCode;
-}
 
 try
 {
-  var compiler = new Compiler();
-  var compilerExitCode = useGcc && !lexOnly
-    ? compiler.Compile(preprocessedFile, assemblyFile)
-    : compiler.Run(preprocessedFile, assemblyFile, lexOnly);
-  if (compilerExitCode != 0)
+  try
   {
-    return compilerExitCode;
+    if (useGcc && !lexOnly)
+    {
+      var startInfo = new ProcessStartInfo
+      {
+        FileName = "gcc",
+        UseShellExecute = false,
+        RedirectStandardError = true,
+        CreateNoWindow = true,
+        ArgumentList =
+        {
+          "-S",
+          preprocessedFile,
+          "-o",
+          assemblyFile
+        }
+      };
+
+      using var process = new Process { StartInfo = startInfo };
+      process.Start();
+      var diagnostics = process.StandardError.ReadToEnd();
+      process.WaitForExit();
+
+      Console.Error.Write(diagnostics);
+      if (process.ExitCode != 0)
+        return process.ExitCode;
+    }
+    else
+    {
+      List<Token> tokens = Lexer.Run(File.ReadAllText(preprocessedFile));
+      if (!lexOnly)
+      {
+        C.Program program = Parser.Run(tokens);
+        Assembly.Program assembly = Generator.Run(program);
+        string output = Emitter.Run(assembly);
+        Writer.Run(output, assemblyFile);
+      }
+    }
+  }
+  catch (Win32Exception) when (useGcc && !lexOnly)
+  {
+    Console.Error.WriteLine("Error: could not start gcc. Ensure gcc is installed and available on PATH.");
+    return 1;
+  }
+  catch (InvalidOperationException exception)
+  {
+    Console.Error.WriteLine(useGcc && !lexOnly
+        ? "Error: could not start gcc."
+        : $"Error: {exception.Message}");
+    return 1;
+  }
+  finally
+  {
+    File.Delete(preprocessedFile);
   }
 }
 catch (IOException)
@@ -75,8 +124,6 @@ catch (UnauthorizedAccessException)
 }
 
 if (lexOnly || assemblyOnly)
-{
   return 0;
-}
 
-return new Assembler().Run(assemblyFile, outputFile, x86_64: !useGcc);
+return Assembler.Run(assemblyFile, outputFile, x86_64: !useGcc);

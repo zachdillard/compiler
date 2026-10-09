@@ -40,12 +40,19 @@ flowchart TD
 Each stage has one job:
 
 1. `Preprocessor` uses GCC to preprocess the C source.
-2. `Lexer` returns the typed tokens defined in `Tokens.cs`.
+2. `Lexer` returns the typed tokens defined in `Token.cs`.
 3. `Parser` returns the C AST defined in `C.cs`.
 4. `Generator` lowers the C AST to the assembly AST in `Assembly.cs`.
 5. `Emitter` returns macOS x86-64 assembly text.
 6. `Writer` saves the assembly to a `.s` file.
 7. `Assembler` uses GCC to assemble and link the executable.
+
+## C# namespaces
+
+Compiler stages and token types use the global namespace. The C AST uses `C`,
+and the assembly AST uses `Assembly`. Tests use `CompilerIntegrationTests`.
+`Driver.cs` handles command-line options and orchestrates both compiler modes
+directly, including preprocessing-file cleanup and compiler diagnostics.
 
 ## GCC-backed mode
 

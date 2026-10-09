@@ -6,8 +6,6 @@
     <IsTestProject>true</IsTestProject>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <!-- Recommended: Keep null safety on for exhaustive matching -->
-    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>

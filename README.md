@@ -141,14 +141,14 @@ and the compiler prerequisites above. From the compiler repository root:
 ```sh
 git clone https://github.com/nlsandler/writing-a-c-compiler-tests.git \
   ../writing-a-c-compiler-tests
-./tests/run_book_tests.sh --chapter 1
+./tests/book_tests.sh --chapter 1
 ```
 
 This runs the full chapter-one suite against the custom compiler, including
 valid programs and invalid lexing/parsing cases. To test only lexing, use:
 
 ```sh
-./tests/run_book_tests.sh --chapter 1 --stage lex
+./tests/book_tests.sh --chapter 1 --stage lex
 ```
 
 Run the script from the compiler repository root so `dotnet` uses the SDK
@@ -159,20 +159,46 @@ For an existing checkout elsewhere:
 
 ```sh
 BOOK_TESTS_DIR="/path/to/writing-a-c-compiler-tests" \
-  ./tests/run_book_tests.sh --chapter 1
+  ./tests/book_tests.sh --chapter 1
 ```
 
 See the
 [`writing-a-c-compiler-tests`](https://github.com/nlsandler/writing-a-c-compiler-tests)
-repository for additional test runner usage.
+repository for additional test runner usage. The script defaults to a Debug
+build; set `BUILD_CONFIGURATION=Release` to test a Release build.
 
 ## Project tests
 
-Run the integration tests from the repository root:
+The repository's `.editorconfig` defines C# formatting. To format the main
+application and tests without changing the standalone concepts examples, run:
+
+```sh
+dotnet format whitespace Compiler.slnx
+```
+
+Run the project tests from the repository root:
 
 ```sh
 dotnet test
 ```
+
+To check both build configurations:
+
+```sh
+dotnet build --configuration Debug
+dotnet test --configuration Debug --no-build
+dotnet build --configuration Release
+dotnet test --configuration Release --no-build
+```
+
+Integration tests launch the compiler DLL copied into the test output, using
+that build's test runtime configuration and dependency manifest. They do not
+require a separate Debug build when testing Release.
+
+GitHub Actions runs these builds and tests on an Intel macOS runner for pushes,
+pull requests, and manual runs. It installs the SDK from `global.json` and checks
+GCC availability. Each configuration also runs the chapter-one book suite
+against a separate checkout of the upstream tests.
 
 The tests require GCC to be available on `PATH` and include parser, generator,
 emitter, and CLI checks, including execution of generated programs. The current

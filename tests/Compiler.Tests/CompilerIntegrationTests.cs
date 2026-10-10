@@ -6,6 +6,29 @@ namespace CompilerIntegrationTests;
 public sealed class CompilerIntegrationTests
 {
   [Fact]
+  public void VersionDoesNotRequireGcc()
+  {
+    var result = RunCompilerWithoutGcc("--version");
+
+    Assert.Equal(0, result.ExitCode);
+    Assert.Equal($"Compiler 0.1.0{Environment.NewLine}", result.StandardOutput);
+    Assert.Empty(result.StandardError);
+  }
+
+  [Theory]
+  [InlineData("--version", "-S")]
+  [InlineData("--version", "missing.c")]
+  [InlineData("missing.c", "--version")]
+  public void VersionRejectsOtherArguments(string first, string second)
+  {
+    var result = RunCompilerWithoutGcc(first, second);
+
+    Assert.Equal(1, result.ExitCode);
+    Assert.Empty(result.StandardOutput);
+    Assert.Contains("Usage: Compiler", result.StandardError);
+  }
+
+  [Fact]
   public void NoArgumentsPrintUsageAndFail()
   {
     var result = RunCompiler();
@@ -182,6 +205,16 @@ public sealed class CompilerIntegrationTests
 
   private static ProcessResult RunCompiler(params string[] arguments)
   {
+    return RunCompilerWithEnvironment(arguments, withoutGcc: false);
+  }
+
+  private static ProcessResult RunCompilerWithoutGcc(params string[] arguments)
+  {
+    return RunCompilerWithEnvironment(arguments, withoutGcc: true);
+  }
+
+  private static ProcessResult RunCompilerWithEnvironment(string[] arguments, bool withoutGcc)
+  {
     var compilerAssembly = typeof(Lexer).Assembly.Location;
     var testAssembly = typeof(CompilerIntegrationTests).Assembly.Location;
     var runtimeConfiguration = Path.ChangeExtension(testAssembly, ".runtimeconfig.json");
@@ -208,6 +241,9 @@ public sealed class CompilerIntegrationTests
     startInfo.ArgumentList.Add(compilerAssembly);
     foreach (var argument in arguments)
       startInfo.ArgumentList.Add(argument);
+
+    if (withoutGcc)
+      startInfo.Environment["PATH"] = string.Empty;
 
     using var process = Process.Start(startInfo);
     Assert.NotNull(process);

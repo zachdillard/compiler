@@ -3,6 +3,13 @@ using System.Diagnostics;
 
 const string usage = "Usage: Compiler [-gcc] [-S] [--lex] <source-file>";
 
+if (args is ["--version"])
+{
+  var version = typeof(Lexer).Assembly.GetName().Version!;
+  Console.WriteLine($"Compiler {version.ToString(3)}");
+  return 0;
+}
+
 if (args.Length < 1 || args.Length > 3)
 {
   Console.Error.WriteLine(usage);

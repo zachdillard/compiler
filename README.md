@@ -6,6 +6,17 @@
 
 This project is a C# and .NET 11 RC1 implementation of the C compiler described in [*Writing a C Compiler*](https://nostarch.com/writing-c-compiler) by Nora Sandler.
 
+## Versioning and license
+
+Each `v0.N.0` release completes chapter N, including all earlier chapters.
+Patch releases use `v0.N.P` for fixes within that chapter's scope. `v1.0.0`
+is reserved for a separate production-readiness milestone.
+Chapter one is implemented; `v0.1.0` is being prepared and has not been published.
+The version is defined in `Directory.Build.props`; see the [changelog](CHANGELOG.md)
+for release history.
+
+The project is [MIT licensed](LICENSE).
+
 ## Requirements
 
 - .NET 11 RC1 SDK **11.0.100-rc.1.26425.128**, as specified in `global.json`
@@ -65,6 +76,15 @@ See [Compiler architecture](docs/architecture.md) for the supported grammar,
 pipeline diagram, stage responsibilities, and GCC-backed mode.
 
 ## Usage
+
+Print the version without invoking GCC:
+
+```sh
+dotnet run --project src/Compiler.csproj -- --version
+```
+
+`--version` must be used on its own.
+
 
 Build the compiler from the repository root:
 

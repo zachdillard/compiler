@@ -9,10 +9,9 @@ public sealed class CompilerIntegrationTests
   public void VersionDoesNotRequireGcc()
   {
     var result = RunCompilerWithoutGcc("--version");
-    var version = typeof(Lexer).Assembly.GetName().Version!.ToString(3);
 
     Assert.Equal(0, result.ExitCode);
-    Assert.Equal($"Compiler {version}{Environment.NewLine}", result.StandardOutput);
+    Assert.Equal($"Compiler 0.1.0{Environment.NewLine}", result.StandardOutput);
     Assert.Empty(result.StandardError);
   }
 

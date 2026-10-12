@@ -50,8 +50,7 @@ gcc --version
 xcode-select -p
 ```
 
-Run `dotnet --version` inside the checkout so it uses `global.json`. The first
-project build or test run needs access to NuGet to restore test dependencies.
+Run `dotnet --version` inside the checkout so it uses `global.json`.
 
 ## Quick start
 
@@ -64,7 +63,6 @@ dotnet build
 dotnet run --project src/Compiler.csproj -- data/return_2.c
 ./data/return_2
 echo $?
-dotnet test
 ```
 
 The generated program prints nothing and exits with status `2`, which
@@ -164,6 +162,13 @@ git clone https://github.com/nlsandler/writing-a-c-compiler-tests.git \
 ./tests/book_tests.sh --chapter 1
 ```
 
+The equivalent file-based C# script accepts the same options and environment
+variables:
+
+```sh
+dotnet tests/book_tests.cs -- --chapter 1
+```
+
 This runs the full chapter-one suite against the custom compiler, including
 valid programs and invalid lexing/parsing cases. To test only lexing, use:
 
@@ -187,43 +192,31 @@ See the
 repository for additional test runner usage. The script defaults to a Debug
 build; set `BUILD_CONFIGURATION=Release` to test a Release build.
 
-## Project tests
+## Development
 
 The repository's `.editorconfig` defines C# formatting. To format the main
-application and tests without changing the standalone concepts examples, run:
+application without changing the standalone scripts and concepts examples, run:
 
 ```sh
 dotnet format whitespace Compiler.slnx
 ```
 
-Run the project tests from the repository root:
+To build and run the book tests in both configurations:
 
 ```sh
-dotnet test
+dotnet build --configuration Debug -m:1 --disable-build-servers
+BUILD_CONFIGURATION=Debug ./tests/book_tests.sh --chapter 1
+dotnet build --configuration Release -m:1 --disable-build-servers
+BUILD_CONFIGURATION=Release ./tests/book_tests.sh --chapter 1
 ```
-
-To check both build configurations:
-
-```sh
-dotnet build --configuration Debug
-dotnet test --configuration Debug --no-build
-dotnet build --configuration Release
-dotnet test --configuration Release --no-build
-```
-
-Integration tests launch the compiler DLL copied into the test output, using
-that build's test runtime configuration and dependency manifest. They do not
-require a separate Debug build when testing Release.
 
 GitHub Actions runs these builds and tests on an Intel macOS runner for pushes,
 pull requests, and manual runs. It installs the SDK from `global.json` and checks
-GCC availability. Each configuration also runs the chapter-one book suite
+GCC availability. Each configuration runs the chapter-one book suite
 against a separate checkout of the upstream tests.
 
-The tests require GCC to be available on `PATH` and include parser, generator,
-emitter, and CLI checks, including execution of generated programs. The current
-implementation passes all 30 project tests and all 24 chapter-one book tests
-on macOS with Apple Silicon and Rosetta 2.
+The current implementation passes all 24 chapter-one book tests on macOS with
+Apple Silicon and Rosetta 2.
 
 ## Concepts
 

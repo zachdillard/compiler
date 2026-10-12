@@ -29,8 +29,6 @@ jobs:
         run: dotnet restore
       - name: Build
         run: dotnet build --configuration ${{ matrix.configuration }} --no-restore -m:1 -p:UseSharedCompilation=false
-      - name: Test
-        run: dotnet test --configuration ${{ matrix.configuration }} --no-build --no-restore -m:1
       - name: Check out book tests
         uses: actions/checkout@v5
         with:

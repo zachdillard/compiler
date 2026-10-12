@@ -151,6 +151,20 @@ echo $?
 The example exits with status `2` with either compiler. It prints nothing;
 `echo $?` displays the exit status.
 
+## Unit tests
+
+From the repository root, build and run the xUnit v3 tests:
+
+```sh
+dotnet build -m:1 --disable-build-servers
+dotnet test --solution Compiler.slnx --no-build
+```
+
+The tests exercise Lexer, Parser, Generator, and Emitter directly, plus one
+in-memory pipeline check. They require the pinned .NET SDK but do not invoke
+GCC, create compiler output files, or require Rosetta. The book tests below
+provide acceptance coverage for the complete compiler executable.
+
 ## Optional book tests
 
 The book suite is a separate checkout and requires Git, Python 3.8 or newer,
@@ -194,26 +208,28 @@ build; set `BUILD_CONFIGURATION=Release` to test a Release build.
 
 ## Development
 
-The repository's `.editorconfig` defines C# formatting. To format the main
-application without changing the standalone scripts and concepts examples, run:
+The repository's `.editorconfig` defines C# formatting. To format the compiler
+and unit tests without changing the standalone scripts and concepts examples, run:
 
 ```sh
 dotnet format whitespace Compiler.slnx
 ```
 
-To build and run the book tests in both configurations:
+To build and run the unit and book tests in both configurations:
 
 ```sh
 dotnet build --configuration Debug -m:1 --disable-build-servers
+dotnet test --solution Compiler.slnx --configuration Debug --no-build
 BUILD_CONFIGURATION=Debug ./tests/book_tests.sh --chapter 1
 dotnet build --configuration Release -m:1 --disable-build-servers
+dotnet test --solution Compiler.slnx --configuration Release --no-build
 BUILD_CONFIGURATION=Release ./tests/book_tests.sh --chapter 1
 ```
 
 GitHub Actions runs these builds and tests on an Intel macOS runner for pushes,
 pull requests, and manual runs. It installs the SDK from `global.json` and checks
-GCC availability. Each configuration runs the chapter-one book suite
-against a separate checkout of the upstream tests.
+GCC availability. Each configuration runs the unit tests and the chapter-one
+book suite against a separate checkout of the upstream tests.
 
 The current implementation passes all 24 chapter-one book tests on macOS with
 Apple Silicon and Rosetta 2.

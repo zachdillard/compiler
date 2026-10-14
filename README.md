@@ -244,14 +244,3 @@ cd concepts
 dotnet <concept-name>.cs
 ```
 
-For example:
-
-```sh
-dotnet lexer.cs
-```
-
-The available examples are `lexer.cs`, `parser.cs`, and `compiler.cs`.
-
-VS Code includes `Debug parser.cs` and `Debug compiler.cs` configurations.
-Install the Microsoft C# extension to use them. Each configuration builds its
-example into `obj/` before launching it; paths are relative to the workspace.

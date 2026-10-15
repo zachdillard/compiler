@@ -88,7 +88,7 @@ Debug/Release checks, and CI.
 - [C AST](docs/c-ast.md) and [assembly AST](docs/asm-ast.md): current intermediate representations.
 - [Development guide](docs/development.md): setup, debugging, testing, and versioning.
 - [Concepts guide](concepts/README.md): standalone C# examples to explore.
-- [Chapter 1 notes](notes/chapter-1.md) and [chapter 2 notes](notes/chapter-2.md): working notes for the book chapters.
+- [Chapter 1 notes](notes/chapter-1.md): working notes for the book chapter.
 - [Changelog](CHANGELOG.md): release history and current limitations.
 
 ## License

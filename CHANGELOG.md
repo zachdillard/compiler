@@ -4,6 +4,10 @@
 
 ### Added
 
+- Source locations, caret ranges, expected/actual syntax errors, related
+  delimiter notes, unsupported-operator messages, and detailed numeric and
+  command-line errors. Preprocessor line markers preserve original file/line
+  locations, including included files.
 - Chapter one custom compiler: a single `int` function with `void` parameters
   returning an integer constant, emitted as macOS x86-64 assembly or an executable.
 - Shared version metadata in `Directory.Build.props` and `--version`, which

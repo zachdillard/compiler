@@ -9,93 +9,89 @@ public sealed class ParserTests
   [InlineData("main", 0)]
   [InlineData("_entry1", 42)]
   [InlineData("maximum", int.MaxValue)]
-  public void ParsesFunctionAndConsumesTokens(string identifier, int value)
+  public void ParsesFunction(string identifier, int value)
   {
-    List<Token> tokens = FunctionTokens(identifier, value);
+    TokenStream tokens = Lexer.Run($"int {identifier}(void) {{ return {value}; }}");
 
     C.Program program = Parser.Run(tokens);
 
     Assert.Equal(new C.Program(new C.Function(identifier, new C.Return(new C.Constant(value)))), program);
-    Assert.Empty(tokens);
   }
 
   [Theory]
-  [InlineData("")]
-  [InlineData("int main(void) { return 2;")]
-  [InlineData("int main(void) { return 2 }")]
-  [InlineData("int main() { return 2; }")]
-  [InlineData("int 2(void) { return 2; }")]
-  [InlineData("int main(void) { return main; }")]
-  [InlineData("int main(void) { return 2; } int extra(void) { return 3; }")]
-  public void RejectsInvalidSyntax(string source)
+  [InlineData(0, "'int' at the start of the function")]
+  [InlineData(1, "an identifier for the function name")]
+  [InlineData(2, "'(' after the function name")]
+  [InlineData(3, "'void' in the parameter list (only void parameters are supported)")]
+  [InlineData(4, "')' after the parameter list")]
+  [InlineData(5, "'{' to open the function body")]
+  [InlineData(6, "'return' in the function body (only a return statement is supported)")]
+  [InlineData(7, "an integer constant after 'return' (only integer constant expressions are supported)")]
+  [InlineData(8, "';' after the return statement")]
+  [InlineData(9, "'}' to close the function body")]
+  public void RejectsTruncatedTokensWithContext(int length, string expected)
   {
-    List<Token> tokens = Lexer.Run(source);
+    TokenStream all = Lexer.Run("int main(void) { return 42; }");
+    SourceSpan end = all.Tokens[length].Span with { Length = 0 };
+    TokenStream truncated = new(all.Tokens.GetRange(0, length), end);
 
-    Assert.Throws<InvalidOperationException>(() => Parser.Run(tokens));
+    var error = Assert.Throws<DiagnosticException>(() => Parser.Run(truncated));
+
+    Assert.Equal($"expected {expected}; found end of input.", error.Message);
+    Assert.Equal(end, error.Span);
   }
 
   [Theory]
-  [InlineData(0)]
-  [InlineData(1)]
-  [InlineData(2)]
-  [InlineData(3)]
-  [InlineData(4)]
-  [InlineData(5)]
-  [InlineData(6)]
-  [InlineData(7)]
-  [InlineData(8)]
-  [InlineData(9)]
-  public void RejectsTruncatedTokensWithDiagnostic(int length)
+  [InlineData("void main(void) { return 2; }", "'int' at the start of the function", "void", 1)]
+  [InlineData("int 2(void) { return 2; }", "an identifier for the function name", "2", 5)]
+  [InlineData("int main { return 2; }", "'(' after the function name", "{", 10)]
+  [InlineData("int main() { return 2; }", "'void' in the parameter list (only void parameters are supported)", ")", 10)]
+  [InlineData("int main(void { return 2; }", "')' after the parameter list", "{", 15)]
+  [InlineData("int main(void) return 2; }", "'{' to open the function body", "return", 16)]
+  [InlineData("int main(void) { int x; }", "'return' in the function body (only a return statement is supported)", "int", 18)]
+  [InlineData("int main(void) { return main; }", "an integer constant after 'return' (only integer constant expressions are supported)", "main", 25)]
+  [InlineData("int main(void) { return 2 }", "';' after the return statement", "}", 27)]
+  [InlineData("int main(void) { return 2; return 3; }", "'}' to close the function body", "return", 28)]
+  public void RejectsIncorrectTokenWithExpectedAndActual(string source, string expected, string actual, int column)
   {
-    List<Token> tokens = FunctionTokens("main", 42).GetRange(0, length);
+    var error = Assert.Throws<DiagnosticException>(() => Parser.Run(Lexer.Run(source, "syntax.c")));
 
-    InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => Parser.Run(tokens));
+    Assert.Equal($"expected {expected}; found '{actual}'.", error.Message);
+    Assert.Equal(new SourceSpan("syntax.c", 1, column, actual.Length, source), error.Span);
+  }
 
-    Assert.Equal("Unexpected end of input.", exception.Message);
+  [Fact]
+  public void MissingClosingBrace_PointsToOpeningBraceAndEndOfInput()
+  {
+    var error = Assert.Throws<DiagnosticException>(() =>
+      Parser.Run(Lexer.Run("int main(void) {\n  return 2;\n", "program.c")));
+
+    Assert.Equal("expected '}' to close the function body; found end of input.", error.Message);
+    Assert.Equal(new SourceSpan("program.c", 3, 1, 0, ""), error.Span);
+    Assert.Equal(new DiagnosticNote("to match this '{'.",
+      new SourceSpan("program.c", 1, 16, 1, "int main(void) {")), error.Note);
+  }
+
+  [Fact]
+  public void MissingClosingParenthesis_PointsToOpeningParenthesis()
+  {
+    const string source = "int main(void { return 2; }";
+    var error = Assert.Throws<DiagnosticException>(() => Parser.Run(Lexer.Run(source)));
+
+    Assert.Equal(new DiagnosticNote("to match this '('.",
+      new SourceSpan("<input>", 1, 9, 1, source)), error.Note);
   }
 
   [Theory]
-  [InlineData(0, "Expected Int.")]
-  [InlineData(1, "Expected an identifier.")]
-  [InlineData(2, "Expected OpenParenthesis.")]
-  [InlineData(3, "Expected Void.")]
-  [InlineData(4, "Expected CloseParenthesis.")]
-  [InlineData(5, "Expected OpenBrace.")]
-  [InlineData(6, "Expected Return.")]
-  [InlineData(7, "Expected an integer constant.")]
-  [InlineData(8, "Expected Semicolon.")]
-  [InlineData(9, "Expected CloseBrace.")]
-  public void RejectsIncorrectTokenWithDiagnostic(int position, string expected)
+  [InlineData(";", "expected end of input after the function; found ';'.")]
+  [InlineData("int other(void) { return 0; }", "additional functions or declarations are not supported yet; expected end of input.")]
+  public void RejectsTrailingTokensWithDiagnostic(string trailing, string expected)
   {
-    List<Token> tokens = FunctionTokens("main", 42);
-    // Semicolon is incorrect everywhere except its own grammar position.
-    tokens[position] = position == 8 ? new Int() : new Semicolon();
+    var error = Assert.Throws<DiagnosticException>(() =>
+      Parser.Run(Lexer.Run("int main(void) { return 42; }\n" + trailing)));
 
-    InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => Parser.Run(tokens));
-
-    Assert.Equal(expected, exception.Message);
+    Assert.Equal(expected, error.Message);
+    Assert.Equal(2, error.Span.Line);
+    Assert.Equal(1, error.Span.Column);
   }
-
-  [Theory]
-  [InlineData(false)]
-  [InlineData(true)]
-  public void RejectsTrailingTokensWithDiagnostic(bool secondFunction)
-  {
-    List<Token> tokens = FunctionTokens("main", 42);
-    if (secondFunction)
-      tokens.AddRange(FunctionTokens("other", 0));
-    else
-      tokens.Add(new Semicolon());
-
-    InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => Parser.Run(tokens));
-
-    Assert.Equal("Unexpected tokens after the function.", exception.Message);
-  }
-
-  private static List<Token> FunctionTokens(string identifier, int value) =>
-  [
-    new Int(), new Identifier(identifier), new OpenParenthesis(), new Void(),
-    new CloseParenthesis(), new OpenBrace(), new Return(), new Constant(value),
-    new Semicolon(), new CloseBrace()
-  ];
 }

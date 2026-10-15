@@ -32,6 +32,7 @@ public sealed class DriverTests
 
     Assert.Equal(ExitCode.Failure, result.ExitCode);
     Assert.Empty(result.StandardOutput);
+    Assert.Contains("--version must be used alone", result.StandardError);
     Assert.Contains("Usage: Compiler", result.StandardError);
   }
 
@@ -41,6 +42,7 @@ public sealed class DriverTests
     var result = RunCompiler();
 
     Assert.Equal(ExitCode.Failure, result.ExitCode);
+    Assert.Contains("Missing source file", result.StandardError);
     Assert.Contains("Usage: Compiler [-S] [--lex] <source-file>", result.StandardError);
   }
 
@@ -150,7 +152,7 @@ public sealed class DriverTests
     var result = RunCompiler(fixture.SourcePath);
 
     Assert.Equal(ExitCode.Failure, result.ExitCode);
-    Assert.Contains("Expected Semicolon", result.StandardError);
+    Assert.Contains("expected ';' after the return statement; found '}'.", result.StandardError);
     Assert.False(File.Exists(fixture.PreprocessedPath));
     Assert.False(File.Exists(fixture.ExecutablePath));
   }
@@ -170,8 +172,8 @@ public sealed class DriverTests
 
     Assert.Equal(ExitCode.Failure, result.ExitCode);
     Assert.Empty(result.StandardOutput);
-    Assert.Equal($"Error: integer constant is outside the supported int range.{Environment.NewLine}",
-      result.StandardError);
+    Assert.Contains($"integer constant '{constant}' is outside the supported int range (0 to 2147483647).", result.StandardError);
+    Assert.Contains($"{fixture.SourcePath}:1:25: error:", result.StandardError);
     Assert.False(File.Exists(fixture.PreprocessedPath));
     Assert.False(File.Exists(fixture.AssemblyPath));
     Assert.False(File.Exists(fixture.ExecutablePath));
@@ -215,6 +217,7 @@ public sealed class DriverTests
 
     Assert.Equal(ExitCode.Failure, result.ExitCode);
     Assert.Empty(result.StandardOutput);
+    Assert.Contains($"Option '{option}' cannot be repeated.", result.StandardError);
     Assert.Contains("Usage: Compiler [-S] [--lex] <source-file>", result.StandardError);
     Assert.False(File.Exists(fixture.PreprocessedPath));
     Assert.False(File.Exists(fixture.AssemblyPath));
@@ -237,10 +240,75 @@ public sealed class DriverTests
 
     Assert.Equal(ExitCode.Failure, result.ExitCode);
     Assert.Empty(result.StandardOutput);
+    Assert.Contains(argument == "extra.c" ? fixture.SourcePath : argument, result.StandardError);
+    if (argument is "-S=false" or "--lex=true")
+      Assert.Contains("does not accept a value", result.StandardError);
     Assert.Contains("Usage: Compiler [-S] [--lex] <source-file>", result.StandardError);
     Assert.False(File.Exists(fixture.PreprocessedPath));
     Assert.False(File.Exists(fixture.AssemblyPath));
     Assert.False(File.Exists(fixture.ExecutablePath));
+  }
+
+  [Fact]
+  public void ParserDiagnosticMapsOriginalLinesAfterPreprocessing()
+  {
+    using var fixture = new TestFixture("#define VALUE 7\n\nint main(void) {\n  return VALUE\n}\n");
+
+    var result = RunCompiler(fixture.SourcePath);
+
+    Assert.Equal(ExitCode.Failure, result.ExitCode);
+    Assert.Contains($"{fixture.SourcePath}:5:1: error: expected ';' after the return statement; found '}}'.", result.StandardError);
+    Assert.Contains($"5 | }}{Environment.NewLine}    ^", result.StandardError);
+    Assert.Empty(result.StandardOutput);
+    Assert.False(File.Exists(fixture.PreprocessedPath));
+    Assert.False(File.Exists(fixture.AssemblyPath));
+    Assert.False(File.Exists(fixture.ExecutablePath));
+  }
+
+  [Fact]
+  public void ParserDiagnosticIdentifiesIncludedFile()
+  {
+    using var fixture = new TestFixture("int main(void) {\n#include \"body.h\"\n");
+    string header = Path.Combine(Path.GetDirectoryName(fixture.SourcePath)!, "body.h");
+    File.WriteAllText(header, "return 7\n}\n");
+
+    var result = RunCompiler(fixture.SourcePath);
+
+    Assert.Equal(ExitCode.Failure, result.ExitCode);
+    Assert.Contains($"{header}:2:1: error: expected ';'", result.StandardError);
+    Assert.Contains($"2 | }}{Environment.NewLine}    ^", result.StandardError);
+    Assert.False(File.Exists(fixture.PreprocessedPath));
+  }
+
+  [Fact]
+  public void LexerDiagnosticShowsExpandedLiteralAndExplainsColumns()
+  {
+    using var fixture = new TestFixture("#define VALUE 123abc\nint main(void) { return VALUE; }\n");
+
+    var result = RunCompiler("--lex", fixture.SourcePath);
+
+    Assert.Equal(ExitCode.Failure, result.ExitCode);
+    Assert.Contains($"{fixture.SourcePath}:2:25: error: invalid integer constant '123abc'", result.StandardError);
+    Assert.Contains("2 | int main(void) { return 123abc; }", result.StandardError);
+    Assert.Contains("^~~~~~", result.StandardError);
+    Assert.Contains("columns and source excerpts refer to preprocessed text", result.StandardError);
+    Assert.Empty(result.StandardOutput);
+    Assert.False(File.Exists(fixture.PreprocessedPath));
+    Assert.False(File.Exists(fixture.AssemblyPath));
+    Assert.False(File.Exists(fixture.ExecutablePath));
+  }
+
+  [Fact]
+  public void EndOfInputDiagnosticIncludesOpeningDelimiterNote()
+  {
+    using var fixture = new TestFixture("int main(void) {\nreturn 7;\n");
+
+    var result = RunCompiler(fixture.SourcePath);
+
+    Assert.Equal(ExitCode.Failure, result.ExitCode);
+    Assert.Contains("expected '}' to close the function body; found end of input.", result.StandardError);
+    Assert.Contains($"{fixture.SourcePath}:1:16: note: to match this '{{'.", result.StandardError);
+    Assert.False(File.Exists(fixture.PreprocessedPath));
   }
 
   [Fact]
@@ -263,7 +331,7 @@ public sealed class DriverTests
   {
     using var fixture = new TestFixture("int main(void) { return 7; }");
     string gccDirectory = fixture.CreateGcc("""
-      /bin/cp "$3" "$5"
+      /bin/cp "$2" "$4"
       echo 'preprocessing failed' >&2
       exit 1
       """);
@@ -320,7 +388,7 @@ public sealed class DriverTests
     using var fixture = new TestFixture("int main(void) { return 7; }");
     string gccDirectory = fixture.CreateGcc($$"""
       if [ "$1" = '-E' ]; then
-        /bin/cp "$3" "$5"
+        /bin/cp "$2" "$4"
         exit 0
       fi
       for argument in "$@"; do

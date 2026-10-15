@@ -70,6 +70,20 @@ Cleanup is also attempted after preprocessing fails. If a compiler file cannot
 be read, written, or removed, the compiler reports a diagnostic on standard error
 and exits with status `1`.
 
+Compiler errors include a filename, line, column, source excerpt, and caret
+range. Parser errors describe the expected syntax and actual token, with a note
+pointing to the opening delimiter when a closing delimiter is missing. Numeric
+errors show the offending literal; unsupported operators explain the current
+language limitation. Invalid command-line arguments report a reason before usage.
+
+GCC's preprocessing line markers preserve original filenames and line numbers,
+including included files and `#line` directives. Columns and source excerpts
+refer to **preprocessed text**, so macro expansion and whitespace changes can
+make them differ from the original source. The diagnostic includes a reminder
+of this limitation. The compiler stops at the first lexer or parser error.
+
+See [diagnostic examples](docs/diagnostics.md) for failures at each stage.
+
 ## Testing
 
 Run the project tests from the repository root:

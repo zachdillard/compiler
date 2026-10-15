@@ -40,7 +40,9 @@ flowchart TD
 Each stage has one job:
 
 1. `Preprocessor` uses GCC to preprocess the C source.
-2. `Lexer` returns the typed tokens defined in `Token.cs`.
+2. `Lexer` returns a `TokenStream` containing the typed tokens defined in
+   `Token.cs`, their spellings and source spans, and an end-of-input location.
+   It consumes GCC line markers to retain original filenames and line numbers.
 3. `Parser` returns the C AST defined in `C.cs` and described in [c-ast.md](c-ast.md).
 4. `Generator` lowers the C AST to the assembly AST in `Assembly.cs`, described in [asm-ast.md](asm-ast.md).
 5. `Emitter` returns macOS x86-64 assembly text.
@@ -55,6 +57,12 @@ The GCC stages (`Preprocessor` and `Assembler`) and `ExitCode` live in
 `src/Helpers/` and use `Helpers`. Tests use `CompilerIntegrationTests`.
 `Driver.cs` constructs command-line options in a static method and orchestrates
 the compiler pipeline, including preprocessing-file cleanup and compiler diagnostics.
+
+Lexer and parser failures use `DiagnosticException`, which carries a primary
+source span and an optional related-location note. `DiagnosticRenderer` formats
+them consistently. The parser advances a cursor through the token stream without
+modifying it. Columns and excerpts describe preprocessed lines; file/line mapping
+does not reconstruct original macro columns. See [diagnostics](diagnostics.md).
 
 See the [README usage instructions](../README.md#usage) for compiler options
 and examples.

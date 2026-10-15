@@ -22,3 +22,7 @@ public record CloseParenthesis();
 public record OpenBrace();
 public record CloseBrace();
 public record Semicolon();
+
+public sealed record LocatedToken(Token Kind, string Text, SourceSpan Span);
+
+public sealed record TokenStream(List<LocatedToken> Tokens, SourceSpan End);

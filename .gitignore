@@ -5,6 +5,7 @@ out/
 *.i
 *.s
 /data/return_2
+/data/return_macro
 
 # Test and coverage output
 TestResults/

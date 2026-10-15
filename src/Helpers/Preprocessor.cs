@@ -16,7 +16,6 @@ public class Preprocessor
       ArgumentList =
       {
         "-E",
-        "-P",
         inputFile,
         "-o",
         preprocessedFile

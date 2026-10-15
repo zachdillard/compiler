@@ -1,6 +1,7 @@
 using Helpers;
 using System.CommandLine;
 using System.CommandLine.Help;
+using System.CommandLine.Parsing;
 using Assembly = Syntax.Assembly;
 using C = Syntax.C;
 
@@ -16,7 +17,8 @@ try
     if (exitCode != ExitCode.Success)
       return exitCode;
 
-    List<Token> tokens = Lexer.Run(File.ReadAllText(compilerArgs.PreprocessedFile));
+    TokenStream tokens = Lexer.Run(File.ReadAllText(compilerArgs.PreprocessedFile),
+      compilerArgs.InputFile, preprocessed: true);
     if (!compilerArgs.LexOnly)
     {
       C.Program program = Parser.Run(tokens);
@@ -25,14 +27,9 @@ try
       Writer.Run(output, compilerArgs.AssemblyFile);
     }
   }
-  catch (InvalidOperationException exception)
+  catch (DiagnosticException exception)
   {
-    Console.Error.WriteLine($"Error: {exception.Message}");
-    return ExitCode.Failure;
-  }
-  catch (OverflowException)
-  {
-    Console.Error.WriteLine("Error: integer constant is outside the supported int range.");
+    Console.Error.Write(DiagnosticRenderer.Render(exception));
     return ExitCode.Failure;
   }
   finally
@@ -79,6 +76,7 @@ static CompilerArguments? CreateCompilerArguments(string[] args, out int exitCod
   {
     if (args is not ["--version"])
     {
+      Console.Error.WriteLine("Error: --version must be used alone.");
       Console.Error.WriteLine(Usage);
       exitCode = ExitCode.Failure;
       return null;
@@ -95,8 +93,27 @@ static CompilerArguments? CreateCompilerArguments(string[] args, out int exitCod
     return null;
   }
 
+  string? optionWithValue = args.FirstOrDefault(argument =>
+    argument.StartsWith("-S=", StringComparison.Ordinal) ||
+    argument.StartsWith("--lex=", StringComparison.Ordinal));
+  if (optionWithValue is not null)
+  {
+    Console.Error.WriteLine($"Error: option '{optionWithValue}' does not accept a value.");
+    Console.Error.WriteLine(Usage);
+    exitCode = ExitCode.Failure;
+    return null;
+  }
+
   if (result.Errors.Count != 0)
   {
+    foreach (var error in result.Errors)
+    {
+      string message = error.SymbolResult is ArgumentResult argumentResult &&
+        argumentResult.Argument == commandLine.SourceFileArgument && argumentResult.Tokens.Count == 0
+        ? "Missing source file."
+        : error.Message;
+      Console.Error.WriteLine($"Error: {message}");
+    }
     Console.Error.WriteLine(Usage);
     exitCode = ExitCode.Failure;
     return null;
@@ -122,8 +139,8 @@ static CommandLine CreateCommandLine()
   };
   sourceFileArgument.Validators.Add(result =>
   {
-    if (result.Tokens.Any(token => token.Value.StartsWith('-')))
-      result.AddError("Expected a source file path, not an option.");
+    foreach (var token in result.Tokens.Where(token => token.Value.StartsWith('-')))
+      result.AddError($"Unrecognized option '{token.Value}'.");
   });
 
   var assemblyOnlyOption = new Option<bool>("-S")

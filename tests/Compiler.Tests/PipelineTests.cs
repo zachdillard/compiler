@@ -13,7 +13,7 @@ public sealed class PipelineTests
     string expected = string.Join(Environment.NewLine,
       "\t.globl _main", "_main:", "\tmovl $42, %eax", "\tret", "");
 
-    List<Token> tokens = Lexer.Run(source);
+    TokenStream tokens = Lexer.Run(source);
     C.Program program = Parser.Run(tokens);
     Assembly.Program assembly = Generator.Run(program);
     string text = Emitter.Run(assembly);

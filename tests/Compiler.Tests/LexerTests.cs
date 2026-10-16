@@ -27,7 +27,7 @@ public sealed class LexerTests
   [Fact]
   public void Run_MixedWhitespace_ReturnsExpectedTokens()
   {
-    List<Token> tokens = Lexer.Run(" \t\r\nint\tmain (\nvoid\r)\f{\vreturn\t42 ; } \n");
+    List<Token> tokens = Lexer.Run(" \t\r\n\u2003int\tmain (\nvoid\r)\f{\vreturn\u00a0\u0085\t42 ; } \n");
 
     Assert.Collection(tokens,
       token => Assert.True(token is Int),
@@ -40,6 +40,22 @@ public sealed class LexerTests
       token => Assert.True(token is Constant { Value: 42 }),
       token => Assert.True(token is Semicolon),
       token => Assert.True(token is CloseBrace));
+  }
+
+  [Fact]
+  public void Run_LongInput_ReturnsEveryTokenInOrder()
+  {
+    const int count = 1024;
+    string source = string.Join(" ", Enumerable.Range(0, count).Select(index => $"name{index};"));
+
+    List<Token> tokens = Lexer.Run(source);
+
+    Assert.Equal(count * 2, tokens.Count);
+    for (int index = 0; index < count; index++)
+    {
+      Assert.True(tokens[index * 2] is Identifier identifier && identifier.Value == $"name{index}");
+      Assert.True(tokens[index * 2 + 1] is Semicolon);
+    }
   }
 
   [Theory]
@@ -89,6 +105,8 @@ public sealed class LexerTests
 
   [Theory]
   [InlineData("@", "Unexpected character: '@'")]
+  [InlineData("int @ main(void){return 42;}", "Unexpected character: '@'")]
+  [InlineData("int main(void){return 42;} @ int", "Unexpected character: '@'")]
   [InlineData("int main(void){return -1;}", "Unexpected character: '-'")]
   [InlineData("int main(void){return 1+2;}", "Unexpected character: '+'")]
   public void Run_UnsupportedCharacter_ThrowsDiagnostic(string source, string expected)
@@ -101,6 +119,8 @@ public sealed class LexerTests
   [Theory]
   [InlineData("123abc")]
   [InlineData("123_abc")]
+  [InlineData("int main(void){return 123abc;}")]
+  [InlineData("int main(void){return 123_abc;}")]
   public void Run_NumericIdentifier_ThrowsDiagnostic(string source)
   {
     InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => Lexer.Run(source));

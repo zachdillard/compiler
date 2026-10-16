@@ -9,14 +9,28 @@ public sealed class ParserTests
   [InlineData("main", 0)]
   [InlineData("_entry1", 42)]
   [InlineData("maximum", int.MaxValue)]
-  public void ParsesFunctionAndConsumesTokens(string identifier, int value)
+  public void ParsesFunctionAndPreservesTokens(string identifier, int value)
   {
     List<Token> tokens = FunctionTokens(identifier, value);
+    Token[] originalTokens = tokens.ToArray();
 
     C.Program program = Parser.Run(tokens);
 
     Assert.Equal(new C.Program(new C.Function(identifier, new C.Return(new C.Constant(value)))), program);
-    Assert.Empty(tokens);
+    Assert.Equal<Token>(originalTokens, tokens);
+  }
+
+  [Fact]
+  public void EachRunStartsAtFirstToken()
+  {
+    List<Token> first = FunctionTokens("main", 42);
+    List<Token> second = FunctionTokens("other", 0);
+    C.Program expectedFirst = new(new C.Function("main", new C.Return(new C.Constant(42))));
+    C.Program expectedSecond = new(new C.Function("other", new C.Return(new C.Constant(0))));
+
+    Assert.Equal(expectedFirst, Parser.Run(first));
+    Assert.Equal(expectedSecond, Parser.Run(second));
+    Assert.Equal(expectedFirst, Parser.Run(first));
   }
 
   [Theory]
@@ -30,8 +44,11 @@ public sealed class ParserTests
   public void RejectsInvalidSyntax(string source)
   {
     List<Token> tokens = Lexer.Run(source);
+    Token[] originalTokens = tokens.ToArray();
 
     Assert.Throws<InvalidOperationException>(() => Parser.Run(tokens));
+
+    Assert.Equal<Token>(originalTokens, tokens);
   }
 
   [Theory]
@@ -48,10 +65,12 @@ public sealed class ParserTests
   public void RejectsTruncatedTokensWithDiagnostic(int length)
   {
     List<Token> tokens = FunctionTokens("main", 42).GetRange(0, length);
+    Token[] originalTokens = tokens.ToArray();
 
     InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => Parser.Run(tokens));
 
     Assert.Equal("Unexpected end of input.", exception.Message);
+    Assert.Equal<Token>(originalTokens, tokens);
   }
 
   [Theory]
@@ -70,10 +89,12 @@ public sealed class ParserTests
     List<Token> tokens = FunctionTokens("main", 42);
     // Semicolon is incorrect everywhere except its own grammar position.
     tokens[position] = position == 8 ? new Int() : new Semicolon();
+    Token[] originalTokens = tokens.ToArray();
 
     InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => Parser.Run(tokens));
 
     Assert.Equal(expected, exception.Message);
+    Assert.Equal<Token>(originalTokens, tokens);
   }
 
   [Theory]
@@ -86,10 +107,12 @@ public sealed class ParserTests
       tokens.AddRange(FunctionTokens("other", 0));
     else
       tokens.Add(new Semicolon());
+    Token[] originalTokens = tokens.ToArray();
 
     InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => Parser.Run(tokens));
 
     Assert.Equal("Unexpected tokens after the function.", exception.Message);
+    Assert.Equal<Token>(originalTokens, tokens);
   }
 
   private static List<Token> FunctionTokens(string identifier, int value) =>

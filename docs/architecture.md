@@ -52,6 +52,12 @@ The mutually exclusive stage flags stop after lexing (`--lex`), parsing
 The first three produce no output files; `-S` leaves a `.s` file without
 assembling or linking. Every mode removes the preprocessed `.i` file.
 
+The lexer walks the source with a character offset, matching tokens only at that
+position without copying the remaining source. The parser uses a token cursor
+instead of removing tokens from the input list. Parsing preserves the caller's
+tokens on both success and failure, so the same list can be inspected or parsed
+again. Each invocation has its own cursor.
+
 ## C# namespaces
 
 `Lexer`, `Parser`, `Generator`, `Emitter`, and token types use the global namespace.

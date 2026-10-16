@@ -4,14 +4,15 @@ public class Parser
 {
   public static C.Program Run(List<Token> tokens)
   {
-    C.Program program = new(ParseFunction(tokens));
-    if (tokens.Count != 0)
+    TokenCursor cursor = new(tokens);
+    C.Program program = new(ParseFunction(cursor));
+    if (!cursor.AtEnd)
       throw new InvalidOperationException("Unexpected tokens after the function.");
 
     return program;
   }
 
-  private static C.Function ParseFunction(List<Token> tokens)
+  private static C.Function ParseFunction(TokenCursor tokens)
   {
     Expect<Int>(tokens);
     string identifier = ParseIdentifier(tokens);
@@ -25,7 +26,7 @@ public class Parser
     return new C.Function(identifier, statement);
   }
 
-  private static C.Return ParseStatement(List<Token> tokens)
+  private static C.Return ParseStatement(TokenCursor tokens)
   {
     Expect<Return>(tokens);
     C.Constant expression = ParseExpression(tokens);
@@ -34,40 +35,45 @@ public class Parser
     return new C.Return(expression);
   }
 
-  private static C.Constant ParseExpression(List<Token> tokens)
+  private static C.Constant ParseExpression(TokenCursor tokens)
   {
     return new C.Constant(ParseInt(tokens));
   }
 
-  private static string ParseIdentifier(List<Token> tokens)
+  private static string ParseIdentifier(TokenCursor tokens)
   {
-    if (TakeToken(tokens) is Identifier identifier)
+    if (tokens.Take() is Identifier identifier)
       return identifier.Value;
 
     throw new InvalidOperationException("Expected an identifier.");
   }
 
-  private static int ParseInt(List<Token> tokens)
+  private static int ParseInt(TokenCursor tokens)
   {
-    if (TakeToken(tokens) is Constant constant)
+    if (tokens.Take() is Constant constant)
       return constant.Value;
 
     throw new InvalidOperationException("Expected an integer constant.");
   }
 
-  private static void Expect<T>(List<Token> tokens)
+  private static void Expect<T>(TokenCursor tokens)
   {
-    if (TakeToken(tokens) is not T)
+    if (tokens.Take() is not T)
       throw new InvalidOperationException($"Expected {typeof(T).Name}.");
   }
 
-  private static Token TakeToken(List<Token> tokens)
+  private sealed class TokenCursor(IReadOnlyList<Token> tokens)
   {
-    if (tokens.Count == 0)
-      throw new InvalidOperationException("Unexpected end of input.");
+    private int position;
 
-    Token token = tokens[0];
-    tokens.RemoveAt(0);
-    return token;
+    public bool AtEnd => position == tokens.Count;
+
+    public Token Take()
+    {
+      if (AtEnd)
+        throw new InvalidOperationException("Unexpected end of input.");
+
+      return tokens[position++];
+    }
   }
 }

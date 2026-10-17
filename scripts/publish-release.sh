@@ -20,7 +20,7 @@ fail() {
   fail "Publish on an ARM64 Mac, outside Rosetta."
 
 # Check PATH before building. Discard command -v's output; only its status matters.
-for tool in dotnet xcode-select xcodebuild xcrun file lipo otool plutil; do
+for tool in dotnet xcode-select xcodebuild xcrun file lipo otool plutil /usr/bin/python3; do
   command -v "$tool" >/dev/null || fail "Required tool is missing: $tool"
 done
 
@@ -30,6 +30,8 @@ pinned_sdk=$(plutil -extract sdk.version raw global.json)
 selected_sdk=$(dotnet --version)
 [[ "$selected_sdk" == "$pinned_sdk" ]] ||
   fail "Install SDK $pinned_sdk from global.json (selected $selected_sdk)."
+source_commit=$(git rev-parse HEAD)
+source_changes=$(git status --porcelain)
 
 # Report the toolchain for local/CI diagnostics. DEVELOPER_DIR takes precedence
 # over xcode-select's default; neither this check nor xcrun changes that default.
@@ -94,6 +96,37 @@ done < <(otool -L "$compiler" | tail -n +2 | sed 's/^[[:space:]]*//; s/ (compati
 # Inspect the chosen distribution policy before any final artifact tests. Do
 # not replace the linker's ad hoc signature with a locally trusted signature.
 ./scripts/check-release-signature.sh "$compiler" 2>&1 | tee "$release_dir/signature.txt"
+# Capture build provenance here, rather than guessing the build host later when
+# a downloaded CI artifact is packaged on another machine. Bind it to the bytes.
+/usr/bin/python3 - "$release_dir" "$source_commit" "$source_changes" "$selected_sdk" <<'PY'
+import hashlib, json, pathlib, subprocess, sys, xml.etree.ElementTree as ET
+
+release = pathlib.Path(sys.argv[1])
+assets = json.loads((release / "build/obj/Compiler/project.assets.json").read_text())
+framework = next(iter(assets["project"]["frameworks"].values()))
+runtime = next(item["version"] for item in framework["downloadDependencies"]
+               if item["name"] == "Microsoft.NETCore.App.Runtime.NativeAOT.osx-arm64")
+runtime_bounds = runtime.strip("[]").split(", ")
+if len(runtime_bounds) != 2 or runtime_bounds[0] != runtime_bounds[1]:
+    sys.exit("Expected an exact Native AOT runtime version in restored assets.")
+runtime = runtime_bounds[0]
+commandline = next(key.split("/")[1] for key in assets["libraries"]
+                   if key.startswith("System.CommandLine/"))
+def output(*args):
+    return subprocess.check_output(args, text=True).strip()
+metadata = {
+    "source_commit": sys.argv[2], "source_dirty": bool(sys.argv[3]),
+    "sdk": sys.argv[4], "build_os": output("sw_vers", "-productVersion"),
+    "build_os_build": output("sw_vers", "-buildVersion"),
+    "xcode": output("xcodebuild", "-version"),
+    "runtime_identifier": "osx-arm64", "minimum_macos": "14.0",
+    "runtime_version": runtime, "system_commandline_version": commandline,
+    "version": ET.parse("Directory.Build.props").findtext(".//Version"),
+    "signing_policy": "ad-hoc-only; no Developer ID; not notarized",
+    "compiler_sha256": hashlib.sha256((release / "publish/Compiler").read_bytes()).hexdigest(),
+}
+(release / "publish/build-metadata.json").write_text(json.dumps(metadata, indent=2) + "\n")
+PY
 echo "Published executable: $compiler"
 echo "Optional symbols: $compiler.dSYM"
 

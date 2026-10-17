@@ -113,6 +113,58 @@ check). Task 08 must test the final downloaded artifact on macOS 14 and the newe
 CI OS before release. Also record the build host OS if it differs. The compiler
 continues to generate x86-64 output.
 
+## Package release assets
+
+After validating the published executable with the smoke checks and all four
+book-suite modes below, package that same file:
+
+```sh
+BOOK_TESTS_DIR=/path/to/writing-a-c-compiler-tests \
+  ./scripts/package-release.py artifacts/release/osx-arm64.XXXXXX/publish/Compiler v0.1.0 --symbols
+```
+
+Replace the example publication directory and upstream checkout path. Python
+3.8+ is required. Omit `--symbols` to create only the runtime archive; omit
+`v0.1.0` to use the version from `Directory.Build.props`. A supplied version,
+the published `--version`, and publication metadata must all agree. This command
+never builds, restores, or publishes. It also works with a downloaded CI
+artifact containing `Compiler`, optional `Compiler.dSYM/`, and
+`build-metadata.json` together; restore the executable bit after artifact transfer.
+
+Publication creates `publish/build-metadata.json` with the source commit,
+dirty-tree flag, SDK, build macOS/Xcode, resolved dependency versions, minimum
+OS, signing policy, and executable SHA-256. Packaging requires this metadata
+beside the supplied executable and verifies its checksum before staging. It
+records the upstream checkout's exact commit in `BUILD-MANIFEST.json`; use the
+checkout that passed validation. Record dirty builds honestly for local work;
+release candidates must come from a clean, committed tree.
+
+Each invocation creates a fresh ignored `artifacts/release/package.XXXXXX/` with:
+
+- `compiler-0.1.0-osx-arm64.tar.gz`, containing one directory of the same name
+  with exactly `Compiler`, `LICENSE`, `README.md`, and `THIRD-PARTY-NOTICES.txt`.
+- Optional `compiler-0.1.0-osx-arm64-symbols.tar.gz`, containing
+  `compiler-0.1.0-osx-arm64-symbols/Compiler.dSYM/` separately.
+- `SHA256SUMS` for the final archives and `BUILD-MANIFEST.json` for provenance
+  and archive hashes. Repeated invocations create new directories; they do not
+  overwrite previous assets. Bit-for-bit reproducibility has not been tested.
+- Staging/extraction directories and `validation.log` for inspection. Upload
+  only the archives, checksum file, and manifest, never the whole directory.
+
+The command rechecks the signature, verifies archive checksums, extracts into a
+fresh directory, requires exactly the expected members and executable
+permissions, compares binary bytes, and runs the full release smoke script
+against the extracted compiler. Failures exit nonzero; only success emits
+`package-directory`, `runtime-archive`, `checksums-path`, `manifest-path`, and
+optional `symbols-archive` through `GITHUB_OUTPUT` for task 07.
+
+[third-party/README.md](../third-party/README.md) records the redistribution
+audit and exact upstream sources. The full .NET license/third-party notices and
+System.CommandLine MIT license are retained verbatim and combined into the
+archive notice file. Resolved dependency versions must match the audited
+versions; upgrades require a new audit before packaging. Nothing in the runtime
+archive needs adjacent DLLs, runtime configuration, debug symbols, or .NET.
+
 ## ARM64 release CI
 
 Chapter one's [distribution policy](distribution.md) is unsigned and

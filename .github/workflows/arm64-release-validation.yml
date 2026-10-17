@@ -85,7 +85,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.artifact-name.outputs.name }}
-          path: ${{ steps.publish.outputs.compiler-path }}*
+          path: |
+            ${{ steps.publish.outputs.compiler-path }}*
+            ${{ steps.publish.outputs.release-directory }}/publish/build-metadata.json
           if-no-files-found: error
       - name: Upload diagnostics even on failure
         if: always()

@@ -97,6 +97,7 @@ jobs:
             artifacts/release/*/publish.log
             artifacts/release/*/publish.binlog
             artifacts/release/*/dependencies.txt
+            artifacts/release/*/signature.txt
 
   minimum-macos:
     needs: validate

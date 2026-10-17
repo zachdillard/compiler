@@ -115,6 +115,12 @@ continues to generate x86-64 output.
 
 ## ARM64 release CI
 
+Chapter one's [distribution policy](distribution.md) is unsigned and
+non-notarized, with only the linker's ad hoc signature. Publication verifies
+that signature before smoke checks and records `signature.txt`. CI requires no
+Developer ID or notarization credentials. The final browser-download approval
+walkthrough remains a task 08 publication gate.
+
 [Compiler Tests](../.github/workflows/compiler-tests.yml) preserves the Intel
 Debug/Release jobs and calls the reusable
 [ARM64 Release Validation](../.github/workflows/arm64-release-validation.yml)

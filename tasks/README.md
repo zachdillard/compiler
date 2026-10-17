@@ -20,9 +20,10 @@ pipeline or publish a release. Complete the checkboxes with evidence as work lan
 | [07 — Release workflow](task-07-automate-draft-release.md) | Tag/manual workflow creating a validated draft release | 03, 05, 06 |
 | [08 — First release](task-08-publish-chapter-one.md) | Rehearsal, download validation, and publication of `v0.1.0` | 01–07 |
 
-Task 04 requires an explicit distribution choice; Developer ID signing and
-notarization are optional for this learning project's first release. Other tasks
-must support the chosen policy without silently claiming the binary is notarized.
+The maintainer selected an unsigned, non-notarized learning release in task 04.
+The ARM64 executable retains only its linker's ad hoc signature; Developer ID
+signing and notarization are deferred. See the [distribution policy](../docs/distribution.md).
+Task 08 must verify the final browser-download approval route on separate hosts.
 
 ## Existing evidence
 

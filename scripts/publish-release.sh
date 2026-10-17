@@ -91,6 +91,9 @@ done < <(otool -L "$compiler" | tail -n +2 | sed 's/^[[:space:]]*//; s/ (compati
 
 # Retain separate native debug symbols for optional packaging; Compiler runs alone.
 [[ -d "$compiler.dSYM" ]] || fail "Native debug symbols are missing: $compiler.dSYM"
+# Inspect the chosen distribution policy before any final artifact tests. Do
+# not replace the linker's ad hoc signature with a locally trusted signature.
+./scripts/check-release-signature.sh "$compiler" 2>&1 | tee "$release_dir/signature.txt"
 echo "Published executable: $compiler"
 echo "Optional symbols: $compiler.dSYM"
 

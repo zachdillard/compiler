@@ -1,6 +1,6 @@
 # Task 04: Choose and implement the distribution signing policy
 
-Status: Implemented; final download walkthrough remains a task 08 gate  
+Status: Implemented; final download walkthrough remains a task 08 gate
 Depends on: [Task 01](task-01-native-arm64-publish.md)
 
 ## Outcome

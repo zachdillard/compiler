@@ -1,0 +1,126 @@
+name: ARM64 Release Validation
+
+on:
+  workflow_call:
+    outputs:
+      compiler-artifact:
+        description: Exact validated Compiler artifact for the caller's commit
+        value: ${{ jobs.validate.outputs.compiler-artifact }}
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  validate:
+    # GitHub's versioned standard macOS labels are ARM64; assert this below.
+    # https://docs.github.com/en/actions/reference/runners/github-hosted-runners
+    runs-on: macos-15
+    timeout-minutes: 30
+    outputs:
+      compiler-artifact: ${{ steps.artifact-name.outputs.name }}
+    env:
+      BOOK_TESTS_DIR: ${{ github.workspace }}/artifacts/writing-a-c-compiler-tests
+      BOOK_TESTS_PYTHON: /usr/bin/python3
+    steps:
+      # A local reusable workflow checks out the caller's exact SHA, including
+      # a PR merge commit or a release tag's commit; never substitute main.
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+      - name: Prepare and report runner prerequisites
+        run: |
+          mkdir -p artifacts/validation
+          ./scripts/check-release-runner.sh 15 2>&1 | tee artifacts/validation/prerequisites.log
+          dotnet --info | tee artifacts/validation/dotnet.log
+          {
+            echo "Source commit: $(git rev-parse HEAD)"
+            echo "Event: $GITHUB_EVENT_NAME; ref: $GITHUB_REF"
+            echo "Run: $GITHUB_RUN_ID; attempt: $GITHUB_RUN_ATTEMPT"
+            shasum -a 256 global.json
+          } | tee artifacts/validation/source.log
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - name: Build
+        run: dotnet build -c Release -m:1 --disable-build-servers 2>&1 | tee artifacts/validation/build.log
+      - name: Project tests
+        run: |
+          dotnet test -c Release --no-build -m:1 --disable-build-servers \
+            --logger trx --results-directory artifacts/validation/test-results \
+            2>&1 | tee artifacts/validation/project-tests.log
+      - name: Publish native ARM64 compiler
+        id: publish
+        run: ./scripts/publish-release.sh 2>&1 | tee artifacts/validation/publish.log
+      - name: Release smoke checks
+        env:
+          COMPILER_PATH: ${{ steps.publish.outputs.compiler-path }}
+        run: ./tests/release_smoke.sh "$COMPILER_PATH" 2>&1 | tee artifacts/validation/smoke.log
+      - name: Check out reviewed book tests
+        uses: actions/checkout@v5
+        with:
+          repository: nlsandler/writing-a-c-compiler-tests
+          ref: ae12014d2dec14488f3f80d14df4b6d8e4634d7d
+          path: artifacts/writing-a-c-compiler-tests
+          persist-credentials: false
+      - name: All chapter-one book-suite modes against published compiler
+        env:
+          COMPILER_PATH: ${{ steps.publish.outputs.compiler-path }}
+        run: |
+          git -C "$BOOK_TESTS_DIR" rev-parse HEAD | tee artifacts/validation/book-test-commit.log
+          ./tests/book_tests.sh --chapter 1 2>&1 | tee artifacts/validation/book-full.log
+          for stage in lex parse codegen; do
+            ./tests/book_tests.sh --chapter 1 --stage "$stage" 2>&1 | tee "artifacts/validation/book-$stage.log"
+          done
+      - name: Name validated artifact
+        id: artifact-name
+        run: echo "name=compiler-arm64-$GITHUB_SHA-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
+      - name: Upload validated executable and optional symbols
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.artifact-name.outputs.name }}
+          path: ${{ steps.publish.outputs.compiler-path }}*
+          if-no-files-found: error
+      - name: Upload diagnostics even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: arm64-validation-logs-${{ github.sha }}-${{ github.run_attempt }}
+          path: |
+            artifacts/validation/
+            artifacts/release/*/publish.log
+            artifacts/release/*/publish.binlog
+            artifacts/release/*/dependencies.txt
+
+  minimum-macos:
+    needs: validate
+    runs-on: macos-14
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.validate.outputs.compiler-artifact }}
+          path: artifacts/downloaded
+      - name: Validate same executable on minimum supported macOS
+        run: |
+          mkdir -p artifacts/validation
+          ./scripts/check-release-runner.sh 14 2>&1 | tee artifacts/validation/prerequisites.log
+          # Workflow artifact transfer does not preserve executable permissions.
+          chmod +x artifacts/downloaded/Compiler
+          ./tests/release_smoke.sh artifacts/downloaded/Compiler 2>&1 | tee artifacts/validation/smoke.log
+      - name: Upload minimum-OS diagnostics even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-14-validation-logs-${{ github.sha }}-${{ github.run_attempt }}
+          path: artifacts/validation/

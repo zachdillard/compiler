@@ -93,3 +93,10 @@ done < <(otool -L "$compiler" | tail -n +2 | sed 's/^[[:space:]]*//; s/ (compati
 [[ -d "$compiler.dSYM" ]] || fail "Native debug symbols are missing: $compiler.dSYM"
 echo "Published executable: $compiler"
 echo "Optional symbols: $compiler.dSYM"
+
+# Reusable CI jobs consume these paths without copying the publish command or
+# guessing which output directory belongs to this invocation.
+if [[ -n ${GITHUB_OUTPUT:-} ]]; then
+  echo "compiler-path=$compiler" >>"$GITHUB_OUTPUT"
+  echo "release-directory=$release_dir" >>"$GITHUB_OUTPUT"
+fi

@@ -6,24 +6,29 @@ on:
     paths:
       - 'src/**'
       - 'tests/**'
+      - 'scripts/**'
       - 'global.json'
       - 'Directory.Build.props'
       - 'Compiler.slnx'
-      - '.github/workflows/compiler-tests.yml'
+      - '.github/workflows/**'
   pull_request:
     paths:
       - 'src/**'
       - 'tests/**'
+      - 'scripts/**'
       - 'global.json'
       - 'Directory.Build.props'
       - 'Compiler.slnx'
-      - '.github/workflows/compiler-tests.yml'
+      - '.github/workflows/**'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
+  arm64-release:
+    uses: ./.github/workflows/arm64-release-validation.yml
+
   test:
     runs-on: macos-15-intel
     strategy:
@@ -49,12 +54,15 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: nlsandler/writing-a-c-compiler-tests
+          # Reviewed and exercised in task 02; update deliberately.
+          ref: ae12014d2dec14488f3f80d14df4b6d8e4634d7d
           path: artifacts/writing-a-c-compiler-tests
       - name: Book tests
         env:
           BOOK_TESTS_DIR: ${{ github.workspace }}/artifacts/writing-a-c-compiler-tests
           BUILD_CONFIGURATION: ${{ matrix.configuration }}
         run: |
+          git -C "$BOOK_TESTS_DIR" rev-parse HEAD
           ./tests/book_tests.sh --chapter 1
           ./tests/book_tests.sh --chapter 1 --stage lex
           ./tests/book_tests.sh --chapter 1 --stage parse

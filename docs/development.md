@@ -113,6 +113,48 @@ check). Task 08 must test the final downloaded artifact on macOS 14 and the newe
 CI OS before release. Also record the build host OS if it differs. The compiler
 continues to generate x86-64 output.
 
+## ARM64 release CI
+
+[Compiler Tests](../.github/workflows/compiler-tests.yml) preserves the Intel
+Debug/Release jobs and calls the reusable
+[ARM64 Release Validation](../.github/workflows/arm64-release-validation.yml)
+workflow when source, tests, release scripts, publish settings, or workflows change.
+It can also be run manually. All jobs have read-only repository permissions.
+
+The ARM64 workflow builds and tests Release on `macos-15`, publishes with
+`./scripts/publish-release.sh`, then runs release smoke checks and all four
+chapter-one book-suite modes against that executable. The upstream suite is pinned
+to `ae12014d2dec14488f3f80d14df4b6d8e4634d7d`, reviewed and exercised in task 02;
+both Intel and ARM64 jobs log that revision. Updating it requires a deliberate
+workflow change and a review of upstream changes.
+
+GitHub currently documents both `macos-14` and `macos-15` as ARM64 in its
+[runner reference](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).
+The jobs assert native ARM64 execution and the expected OS major version, report
+Xcode/macOS SDK/GCC/Python versions, install Rosetta if absent, and probe Xcode's
+`/usr/bin/python3` as x86-64. Missing Xcode or compatible Python fails with an
+explicit prerequisite error. The publish script additionally requires the exact
+.NET SDK pin and records its toolchain. A second job downloads the same validated
+executable onto `macos-14` and repeats smoke checks without installing .NET.
+This checks macOS 14 compatibility of the macOS 15 build, rather than rebuilding
+on the older OS. Task 08 must still check the final downloaded release on separate
+Apple Silicon macOS 14 and 15 machines, including the no-.NET installation check.
+
+Diagnostics (including project test TRX, publish logs/binlog, source commit,
+upstream commit, and checksums) are uploaded even after validation failure.
+The successful executable and optional symbols are uploaded separately under
+`compiler-arm64-<source-SHA>-<run-attempt>`; artifact download requires restoring
+the executable bit. These are inspection artifacts, not packaged release assets.
+
+For task 07, call the reusable workflow using
+`uses: ./.github/workflows/arm64-release-validation.yml` and make packaging depend
+on that call succeeding, including its macOS 14 job. Its `compiler-artifact`
+output identifies the executable validated in the caller's run. Checkout is
+explicitly bound to the caller's `github.sha` (including a PR merge commit or
+tag commit), recorded and asserted in logs. A tagged release must invoke this
+workflow on its own commit and consume that artifact; a green check from another
+commit is insufficient. Signing and final archive validation remain task 07 work.
+
 ## Debugging in VS Code
 
 Install the Microsoft C# extension and open the repository root in VS Code.

@@ -20,6 +20,7 @@ for tool in gcc lipo shasum; do
 done
 /usr/bin/arch -x86_64 /usr/bin/true || prerequisite "Rosetta 2 is required on Apple Silicon."
 [[ $(lipo -archs "$compiler") == arm64 ]] || fail "Compiler must contain only ARM64 code."
+echo "Compiler architecture: $(lipo -archs "$compiler") (executed directly)"
 before=$(shasum -a 256 "$compiler")
 work=$(mktemp -d "${TMPDIR:-/tmp}/compiler-release.XXXXXX")
 trap 'rm -rf "$work"' EXIT
@@ -49,6 +50,7 @@ check_program() {
   [[ -x "$1" ]] || fail "Missing executable: $1"
   [[ $(lipo -archs "$1") == x86_64 ]] || fail "Generated program must contain only x86-64 code."
   expect_status "$2" "$1"
+  echo "Generated program architecture: $(lipo -archs "$1"); executed with exit $2"
 }
 
 expect_status 0 ./Compiler --help

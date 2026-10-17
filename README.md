@@ -28,7 +28,93 @@ int main(void) {
 
 Compiling this program creates an executable that returns `2` to your shell.
 
-## Prerequisites
+## Binary installation
+
+The planned [v0.1.0 release](https://github.com/zachdillard/compiler/releases/tag/v0.1.0)
+provides an **Apple Silicon-only** compiler with its .NET runtime included.
+It generates **macOS x86-64** programs. Binary users need neither .NET nor a
+source checkout. The intended minimum is **macOS 14.0 (Sonoma)**; runtime checks
+on macOS 14 and 15 and the final browser-download walkthrough are still release
+gates. These are candidate instructions: the download links become available
+when task 08 publishes the release.
+
+Compilation still requires Apple's Command Line Tools (`gcc` on `PATH`):
+
+```sh
+xcode-select --install # If the tools are not already installed
+gcc --version
+```
+
+Rosetta 2 is needed on Apple Silicon only to execute the generated x86-64
+programs, including the example below. It is not needed to run the ARM64
+compiler. If necessary, run `softwareupdate --install-rosetta` and follow its
+prompts; see [Apple's Rosetta instructions](https://support.apple.com/en-us/102527).
+
+Download [compiler-0.1.0-osx-arm64.tar.gz](https://github.com/zachdillard/compiler/releases/download/v0.1.0/compiler-0.1.0-osx-arm64.tar.gz)
+and [SHA256SUMS](https://github.com/zachdillard/compiler/releases/download/v0.1.0/SHA256SUMS)
+from that same release. In their download directory, verify the runtime archive:
+
+```sh
+awk '$2 == "compiler-0.1.0-osx-arm64.tar.gz"' SHA256SUMS > runtime.sha256
+test -s runtime.sha256 && shasum -a 256 -c runtime.sha256
+```
+
+Continue only after it reports `compiler-0.1.0-osx-arm64.tar.gz: OK`. Selecting
+this entry avoids requiring the optional symbols archive listed in `SHA256SUMS`.
+Extract and run the compiler directly:
+
+```sh
+tar -xzf compiler-0.1.0-osx-arm64.tar.gz
+./compiler-0.1.0-osx-arm64/Compiler --version
+# Compiler 0.1.0
+```
+
+This learning release is **unsigned for distribution and not notarized**; it
+retains only the linker's ad hoc signature. Browser quarantine may cause macOS
+to block the first launch. After the blocked attempt, dismiss the alert and,
+if you trust the verified download, open **System Settings → Privacy & Security**,
+scroll to **Security**, choose **Open Anyway** for `Compiler`, authenticate if
+requested, and confirm **Open**. Repeat the version command. This follows
+[Apple's per-item approval process](https://support.apple.com/en-us/102445).
+Keep Gatekeeper enabled; if approval is unavailable or the alert reports damage
+or malware, stop and report the exact message. The final downloaded executable's
+approval walkthrough remains a task 08 gate; see the
+[distribution policy](docs/distribution.md#download-approval).
+
+Compile the chapter-one example from the download directory:
+
+```sh
+printf 'int main(void) { return 2; }\n' > return_2.c
+./compiler-0.1.0-osx-arm64/Compiler return_2.c
+./return_2
+echo $? # Expected: 2; the program prints nothing
+./compiler-0.1.0-osx-arm64/Compiler -S return_2.c
+```
+
+Normal compilation writes `return_2` beside its source and removes `.i` and `.s`
+intermediates. `-S` writes `return_2.s` without linking and removes `.i`.
+
+Optionally keep the executable, guide, and notices in a user-owned directory and
+add a command to `PATH`:
+
+```sh
+mkdir -p "$HOME/.local/bin" "$HOME/.local/share/compiler"
+cp -R compiler-0.1.0-osx-arm64 "$HOME/.local/share/compiler/"
+ln -s "$HOME/.local/share/compiler/compiler-0.1.0-osx-arm64/Compiler" "$HOME/.local/bin/Compiler"
+export PATH="$HOME/.local/bin:$PATH"
+Compiler --version
+```
+
+Add the `export PATH` line to your shell's startup file for future terminals.
+If `Compiler` already exists in that directory, inspect the existing installation
+before replacing it. Keep `LICENSE` and `THIRD-PARTY-NOTICES.txt` with your copy.
+Optional debug symbols are a separate download and are not needed at runtime.
+See the [release notes](docs/releases/v0.1.0.md) for scope and remaining release
+checks. There is no Intel or universal compiler download.
+
+## Build from source
+
+### Prerequisites
 
 - .NET 11 RC1 SDK **11.0.100-rc.1.26425.128**, pinned in [global.json](global.json).
 - GCC on `PATH` (Apple's Clang-backed `gcc` works).
@@ -38,7 +124,7 @@ Compiling this program creates an executable that returns `2` to your shell.
 See the [development guide](docs/development.md#setup) for installation steps
 and SDK troubleshooting.
 
-## Quick start
+### Quick start
 
 With Git and the prerequisites installed, run:
 
@@ -54,10 +140,11 @@ echo $? # Expected: 2
 The compiler creates `data/return_2` beside the source file. The generated
 program prints nothing and exits with status `2`, which `echo $?` displays.
 
-## Usage
+## Source usage and compiler options
 
-Run commands from the repository root. The `--` separates `dotnet run` options
-from the arguments passed to the compiler: its options and one C source path.
+For source development, run commands from the repository root. The `--`
+separates `dotnet run` options from the arguments passed to the compiler:
+its options and one C source path.
 The source path must end in `.c`; other extensions are rejected before GCC runs.
 For example, to inspect the custom compiler's assembly:
 
@@ -86,6 +173,10 @@ and exit with status `1` in every compilation mode.
 Cleanup is also attempted after preprocessing fails. If a compiler file cannot
 be read, written, or removed, the compiler reports a diagnostic on standard error
 and exits with status `1`.
+
+The binary accepts the same compiler options directly, for example
+`Compiler --version` or `Compiler -S return_2.c`, without `dotnet run` or its `--`
+separator.
 
 ## Testing
 

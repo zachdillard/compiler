@@ -3,6 +3,11 @@
 Start with the [README](../README.md) for a quick introduction and compiler
 options. Run commands from the repository root unless noted otherwise.
 
+This guide is for contributors. Binary users follow the
+[binary installation instructions](../README.md#binary-installation) without
+cloning the repository or installing .NET. The release executable includes its
+runtime; GCC/Command Line Tools and Rosetta for generated programs still apply.
+
 ## Setup
 
 - .NET 11 RC1 SDK **11.0.100-rc.1.26425.128**, as specified in [global.json](../global.json)
@@ -91,8 +96,10 @@ Each run creates a fresh `artifacts/release/osx-arm64.XXXXXX/` directory. Its
 `publish/Compiler.dSYM/` contains optional separate debug symbols. Build
 intermediates go into `build/`, with `publish.log`, `publish.binlog`, and
 `dependencies.txt` alongside it. The script prints the exact output paths.
-Package only `Compiler`; retain the `.dSYM` for optional symbol packaging. The
-executable needs no DLL, runtime configuration, .NET installation, or `.dSYM`.
+Supply `publish/Compiler` to the packaging command below, keeping
+`publish/build-metadata.json` beside it and retaining `.dSYM` for optional
+separate symbol packaging. The executable needs no DLL, runtime configuration,
+.NET installation, or `.dSYM`.
 
 Release settings apply only to this command. It publishes `src/Compiler.csproj`,
 uses the repository's single-worker/build-server flags, and fails on compiler,
@@ -139,7 +146,7 @@ records the upstream checkout's exact commit in `BUILD-MANIFEST.json`; use the
 checkout that passed validation. Record dirty builds honestly for local work;
 release candidates must come from a clean, committed tree.
 
-Each invocation creates a fresh ignored `artifacts/release/package.XXXXXX/` with:
+Each invocation creates a fresh ignored `artifacts/release/package.<unique>/` with:
 
 - `compiler-0.1.0-osx-arm64.tar.gz`, containing one directory of the same name
   with exactly `Compiler`, `LICENSE`, `README.md`, and `THIRD-PARTY-NOTICES.txt`.
@@ -211,7 +218,84 @@ output identifies the executable validated in the caller's run. Checkout is
 explicitly bound to the caller's `github.sha` (including a PR merge commit or
 tag commit), recorded and asserted in logs. A tagged release must invoke this
 workflow on its own commit and consume that artifact; a green check from another
-commit is insufficient. Signing and final archive validation remain task 07 work.
+commit is insufficient. The unsigned policy is implemented in task 04 and the
+packaging command in task 05. Task 07 must connect packaging to successful
+validation of that exact artifact, including the minimum-OS job, then upload
+the exact archives that passed extraction/smoke checks.
+
+## Manual release rehearsal
+
+Tasks 01–06 provide local publication, validation, packaging, and documentation.
+The tag/manual draft-release workflow (`.github/workflows/release.yml`) remains
+task 07 work; it is not available yet. A local rehearsal creates no tag or
+GitHub release:
+
+1. Use a clean checkout of the candidate commit on Apple Silicon. Install the
+   exact SDK, full Xcode/macOS SDK, GCC, Rosetta, Git, and an x86-64-capable
+   Python 3.8+. Record `git rev-parse HEAD`, `dotnet --info`, `sw_vers`, and
+   `xcodebuild -version`. Review the pinned upstream test commit in ARM64 CI.
+2. Run `dotnet build -m:1 --disable-build-servers` and `dotnet test`, then
+   `./scripts/publish-release.sh` once. Keep its complete output directory.
+3. Set `COMPILER_PATH` to the printed `publish/Compiler` path,
+   `BOOK_TESTS_DIR` to the reviewed upstream checkout, and
+   `BOOK_TESTS_PYTHON=/usr/bin/python3`. Run the published smoke checks and
+   all four chapter-one book-suite modes described below. Do not republish
+   between validation and packaging.
+4. Run `./scripts/package-release.py "$COMPILER_PATH" v0.1.0 --symbols` with
+   those same environment variables. Inspect `validation.log`,
+   `BUILD-MANIFEST.json`, `SHA256SUMS`, and the archive member list. Require a
+   clean source tree in build provenance and the expected source/upstream SHA.
+5. Retain the exact archives/checksums/manifest. Task 08 must download them
+   through a browser on separate Apple Silicon macOS 14 and 15 environments
+   without .NET, verify the checksums, and follow the README verbatim. Record
+   quarantine behavior and per-item approval, `Compiler --version`, compilation,
+   `-S`, and the generated program's expected exit status `2`.
+
+The existing **Compiler Tests** workflow can also be run manually after the
+prepared changes are available on its default branch. It retains the validated
+compiler, adjacent metadata, optional symbols, and logs, including the macOS 14
+check. A workflow artifact ZIP is an inspection/transfer container, not the
+versioned runtime archive. Download it, restore `Compiler`'s executable bit,
+keep its metadata beside it, and use the packaging command on that same file.
+Do not substitute a new local publication for the validated workflow artifact.
+
+After task 07 lands, its manual rehearsal must run all required checks and
+retain packaged assets/logs without creating a tag or release. Verify its real
+behavior, inputs, and output assets before using its tag path. Task 08 retains
+the separate no-.NET-host and final browser checks even after CI is green.
+
+## Tagged release operations
+
+These are future operator steps, after task 07 is implemented and task 08
+publication is authorized. The intended release branch is `main`. Merge the
+release preparation, choose the exact tested commit reachable from `origin/main`,
+and check its project/binary version is `0.1.0`. Finalize the changelog and
+[draft notes](releases/v0.1.0.md) for that candidate while keeping the release
+date unset until actual publication. Set `release_commit` to its verified full
+commit SHA before running:
+
+```sh
+: "${release_commit:?Set release_commit to the verified release commit SHA}" &&
+git fetch origin &&
+git merge-base --is-ancestor "$release_commit" origin/main &&
+git tag v0.1.0 "$release_commit" &&
+git push origin refs/tags/v0.1.0
+```
+
+Continue only if each command succeeds. The task 07 workflow must validate the
+tag, project metadata, binary version, and exact source commit, then create a
+**draft** containing the final archives, checksum file, manifest, and prepared
+notes. A failed check must prevent upload; never rebuild in the upload job.
+Inspect the draft's tag/commit, actual signing policy, notices, prerequisites,
+logs, and assets. Download those exact draft assets, verify checksums, and repeat
+the installation walkthrough before promoting the existing draft to public.
+Set the release date when publication occurs and record task 08's evidence.
+Keep the validated bytes through promotion; publishing is not a rebuild step.
+
+Do not move a published tag or replace public assets silently. Fix an artifact
+with a new patch release (`v0.1.P`) under the chapter-based versioning policy.
+Task 07 must define safe reruns for existing drafts and reject attempts to
+overwrite an already published release.
 
 ## Debugging in VS Code
 

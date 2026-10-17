@@ -4,6 +4,13 @@
 
 ### Added
 
+- Native AOT Apple Silicon (`osx-arm64`) distribution with its .NET runtime
+  included, standalone artifact smoke checks, and ARM64 release validation CI.
+- Versioned runtime archive, optional separate debug symbols, SHA-256 checksums,
+  build provenance, and bundled .NET/System.CommandLine licenses and notices.
+- Binary installation instructions, an explicit unsigned/non-notarized
+  distribution policy, and draft chapter-one release notes. Publication and
+  final download validation remain tasks 07–08; no release date is set yet.
 - `--parse` and `--codegen` stop after parsing and assembly AST generation without
   emitting output files. Stage flags (`--lex`, `--parse`, `--codegen`, and `-S`)
   are mutually exclusive.
@@ -35,3 +42,9 @@
 - GCC is required for preprocessing, assembly, and linking.
 - The custom compiler generates macOS x86-64 programs; Apple Silicon needs Rosetta.
 - Source builds require the pinned .NET 11 RC1 SDK.
+- Binary distribution is Apple Silicon-only; no Intel or universal compiler
+  archive is provided. Its intended minimum is macOS 14.0, pending runtime and
+  final downloaded-artifact checks on macOS 14 and 15 before publication.
+- Distribution has only the linker's ad hoc signature; Developer ID signing and
+  notarization are deferred. Browser downloads may require per-item approval in
+  macOS Privacy & Security settings. The final approval walkthrough is pending.

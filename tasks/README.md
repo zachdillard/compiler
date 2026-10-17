@@ -27,6 +27,13 @@ Task 08 must verify the final browser-download approval route on separate hosts.
 
 ## Existing evidence
 
+- Tasks 04–06 implement the selected unsigned distribution policy, packaging,
+  and installation/release documentation. Task 05 records local publication,
+  185 passing project tests, all four book-suite modes, and extracted-archive
+  smoke/checksum checks. Task 06 records a local installation-command walkthrough.
+  Final browser approval and separate no-.NET macOS 14/15 download walkthroughs
+  remain task 08 gates. Task 07's draft-release workflow is still planned.
+
 - The exploratory Native AOT artifact was approximately 3.6 MB and identified as
   a thin ARM64 Mach-O executable.
 - Copied alone, it passed help/version, stage, compilation, invalid-input, and

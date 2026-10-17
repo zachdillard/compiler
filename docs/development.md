@@ -205,8 +205,8 @@ valid programs and invalid lexing/parsing cases. To test individual stages, use:
 ./tests/book_tests.sh --chapter 1 --stage codegen
 ```
 
-The runner has no assembly-only stage; the project integration tests validate
-`-S`, including linking its assembly with GCC and executing the result.
+The runner has no assembly-only stage; the project integration tests and release
+smoke script validate `-S`, including linking its assembly and executing the result.
 
 Run the script from the compiler repository root so `dotnet` uses the SDK
 selection in `global.json` and the script resolves its paths correctly. It builds
@@ -225,6 +225,56 @@ See the
 [`writing-a-c-compiler-tests`](https://github.com/nlsandler/writing-a-c-compiler-tests)
 repository for additional test runner usage. The script defaults to a Debug
 build; set `BUILD_CONFIGURATION=Release` to test a Release build.
+
+Set `BOOK_TESTS_PYTHON` to a Python executable name or path to select another
+interpreter (one executable, without arguments). On macOS the wrapper launches
+that interpreter with `arch -x86_64` and checks its version and architecture
+independently before running the suite. An ARM-only Python does not become
+x86-64 simply because its parent shell uses Rosetta. Python/Rosetta prerequisite
+failures print `Prerequisite failure:` and exit with status 2. Choose a universal
+or x86-64 Python 3.8+; for example, where available:
+
+```sh
+BOOK_TESTS_PYTHON=/usr/bin/python3 ./tests/book_tests.sh --chapter 1
+```
+
+### Published executable validation
+
+After publication, pass the printed executable path to the smoke script:
+
+```sh
+./tests/release_smoke.sh artifacts/release/osx-arm64.XXXXXX/publish/Compiler
+```
+
+The script copies only that executable into a temporary directory and removes
+the directory on exit. It requires ARM64-only compiler code, runs the compiler
+directly with .NET excluded from `PATH`, checks help/version (against
+`Directory.Build.props`), stages, diagnostics, paths with spaces, intermediate
+cleanup, x86-64 preprocessing and output, and generated-program exit codes.
+Set `EXPECTED_VERSION=0.1.0` to override the expected version for another release.
+GCC and Rosetta are required. Excluding .NET from `PATH` is an isolation check;
+task 08 separately requires a machine without .NET installed.
+
+Use the same published artifact for all four book-suite modes:
+
+```sh
+export COMPILER_PATH="$PWD/artifacts/release/osx-arm64.XXXXXX/publish/Compiler"
+./tests/book_tests.sh --chapter 1
+./tests/book_tests.sh --chapter 1 --stage lex
+./tests/book_tests.sh --chapter 1 --stage parse
+./tests/book_tests.sh --chapter 1 --stage codegen
+unset COMPILER_PATH
+```
+
+Replace `osx-arm64.XXXXXX` with the directory printed by publication. With
+`COMPILER_PATH` supplied, the wrapper validates and resolves the executable path,
+skips the build entirely, and invokes that executable through the upstream runner.
+It reports and compares the compiler's SHA-256 before and after each run,
+including failed runs, and preserves the runner's exit code. `BOOK_TESTS_DIR`,
+`BOOK_TESTS_PYTHON`, and forwarded runner options still apply. Without
+`COMPILER_PATH`, the existing source-build behavior and `BUILD_CONFIGURATION`
+selection apply. The upstream checkout must be writable because tests create
+outputs beside their C inputs.
 
 To compile an individual book-test file directly:
 

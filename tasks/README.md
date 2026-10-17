@@ -33,13 +33,15 @@ must support the chosen policy without silently claiming the binary is notarized
 - Its Mach-O metadata declared macOS 14.0 as the deployment minimum. This is not
   evidence that the artifact works on that OS; the supported minimum needs testing.
 - Existing CI runs on Intel. Driver integration tests invoke the compiler DLL
-  through `dotnet`, and the book-test wrapper builds its own compiler executable.
+  through `dotnet`; the book-test wrapper builds by default and accepts a published
+  executable through `COMPILER_PATH` without rebuilding.
 - On 2026-10-17, `xcodebuild -version` succeeded with Xcode 27.1, build 27A9275;
   the selected developer directory was `/Applications/Xcode.app/Contents/Developer`.
 - With that Xcode selection, rerunning the exploratory Native AOT publish command
   completed with exit code 0. The x86-64 Python probe also completed successfully
   and reported `x86_64 i386`. Both earlier toolchain errors are resolved locally;
-  clean-checkout publication and the full published-artifact suite remain tasks.
+  clean-checkout publication and the full published-artifact suite are now
+  recorded in tasks 01 and 02, respectively.
 
 ## Scope
 

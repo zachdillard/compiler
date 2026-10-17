@@ -28,6 +28,9 @@ working x86-64 programs, while existing Intel Debug/Release coverage remains int
   validation workflow read-only repository permissions.
 - [ ] Validate the minimum supported macOS version from task 01 on an appropriate
   runner, or record a concrete manual-machine validation requirement for task 08.
+  The chosen minimum is macOS 14.0 (Sonoma): test macOS 14 and the selected newer
+  ARM64 CI OS. If macOS 14 is unavailable in CI, require an Apple Silicon Mac
+  running macOS 14 for task 08's final downloaded-artifact checks.
 
 ## Acceptance
 

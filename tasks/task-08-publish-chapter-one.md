@@ -17,6 +17,9 @@ instructions, release notes, and checksums.
 - [ ] Download and extract the rehearsal archive in a separate Apple Silicon
   environment without .NET installed. Install only documented user prerequisites.
 - [ ] Validate the supported minimum macOS version, not just the build host's OS.
+  Test the final downloaded artifact on Apple Silicon running macOS 14 (the
+  chosen minimum) and the newer ARM64 OS selected in task 03. Record the build
+  host OS as well if it differs.
   If this fails, fix deployment settings or narrow the support statement and rebuild
   before creating the final tag; do not leave compatibility implied but untested.
 - [ ] Follow the installation guide exactly. Verify checksum, executable permissions,

@@ -63,6 +63,56 @@ dotnet build -m:1 --disable-build-servers
 
 These flags avoid MSBuild worker socket failures in Codex’s sandbox.
 
+## Native ARM64 release publication
+
+Run the release command from the repository root:
+
+```sh
+./scripts/publish-release.sh
+```
+
+Publication requires an Apple Silicon Mac running natively (not a Rosetta shell),
+the exact SDK version in `global.json`, and full Xcode with its license accepted
+and macOS SDK installed. Install Xcode and finish its first-launch setup before
+publishing. Command Line Tools alone remain sufficient for ordinary development;
+the release script requires full Xcode so its version can be recorded. NuGet
+access is needed on the first restore of the Native AOT toolchain/runtime packs.
+
+The script checks the host, selected SDK, active developer directory, Xcode,
+macOS SDK, and Clang. It respects `DEVELOPER_DIR` when set and never changes the
+machine's global Xcode selection. To use a particular installed Xcode for one run:
+
+```sh
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer ./scripts/publish-release.sh
+```
+
+Each run creates a fresh `artifacts/release/osx-arm64.XXXXXX/` directory. Its
+`publish/Compiler` is the Release, self-contained Native AOT executable;
+`publish/Compiler.dSYM/` contains optional separate debug symbols. Build
+intermediates go into `build/`, with `publish.log`, `publish.binlog`, and
+`dependencies.txt` alongside it. The script prints the exact output paths.
+Package only `Compiler`; retain the `.dSYM` for optional symbol packaging. The
+executable needs no DLL, runtime configuration, .NET installation, or `.dSYM`.
+
+Release settings apply only to this command. It publishes `src/Compiler.csproj`,
+uses the repository's single-worker/build-server flags, and fails on compiler,
+AOT, or trimming warnings without suppressing them. It checks the executable with
+`file`, `lipo -archs`, and `otool -L`, requiring ARM64 alone and dynamic dependencies
+only in public macOS system library/framework directories. GCC and Rosetta are
+still needed to compile and run generated **x86-64** programs, respectively.
+Native AOT publication and separate macOS symbols are described in the
+[official .NET guide](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/).
+
+The chosen minimum for the ARM64 binary is **macOS 14.0 (Sonoma)**. Publication
+sets both Native AOT's `AppleMinOSVersion=14.0` and
+`MACOSX_DEPLOYMENT_TARGET=14.0`; this matches the pinned toolchain's default
+minimum. This is a support decision pending runtime verification, not a claim
+that Mach-O deployment metadata proves compatibility. Task 03 must validate on
+macOS 14 and its selected newer ARM64 CI OS (or track a manual macOS 14 machine
+check). Task 08 must test the final downloaded artifact on macOS 14 and the newer
+CI OS before release. Also record the build host OS if it differs. The compiler
+continues to generate x86-64 output.
+
 ## Debugging in VS Code
 
 Install the Microsoft C# extension and open the repository root in VS Code.

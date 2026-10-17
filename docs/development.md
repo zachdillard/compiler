@@ -68,11 +68,12 @@ These flags avoid MSBuild worker socket failures in Codex’s sandbox.
 Run the release command from the repository root:
 
 ```sh
-./scripts/publish-release.sh
+./scripts/publish-release.ps1
 ```
 
 Publication requires an Apple Silicon Mac running natively (not a Rosetta shell),
-the exact SDK version in `global.json`, and full Xcode with its license accepted
+the exact SDK version in `global.json`, PowerShell 7.3 or newer (`pwsh` on
+`PATH`; for example `brew install powershell`), and full Xcode with its license accepted
 and macOS SDK installed. Install Xcode and finish its first-launch setup before
 publishing. Command Line Tools alone remain sufficient for ordinary development;
 the release script requires full Xcode so its version can be recorded. NuGet
@@ -83,7 +84,7 @@ macOS SDK, and Clang. It respects `DEVELOPER_DIR` when set and never changes the
 machine's global Xcode selection. To use a particular installed Xcode for one run:
 
 ```sh
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer ./scripts/publish-release.sh
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer ./scripts/publish-release.ps1
 ```
 
 Each run creates a fresh `artifacts/release/osx-arm64.XXXXXX/` directory. Its
